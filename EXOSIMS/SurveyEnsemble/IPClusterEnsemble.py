@@ -107,7 +107,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                         nb_run_sim = len(self.rc.outstanding)
                         restartRuns = True
                         self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
-                        self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+                        #self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
                         self.rc.purge_everything() # purge all results if outstanding *because rc.abort() didn't seem to do the job right
                         tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation was restarted (right now)
 
