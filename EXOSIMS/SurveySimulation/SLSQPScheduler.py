@@ -71,6 +71,7 @@ class SLSQPScheduler(SurveySimulation):
             #find nominal background counts for all targets in list
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, 25.0, self.WAint, self.detmode)
+            Csps[Csps==0./u.s] = 10.**-15./u.s # patch to ensure no Csp values are 0. Noted that some got converted into 0 when all their components appear to be nonzero (specifically related to HabEx run)
 
             #find baseline solution with dMagLim-based integration times
             self.vprint('Finding baseline fixed-time optimal target set.')
