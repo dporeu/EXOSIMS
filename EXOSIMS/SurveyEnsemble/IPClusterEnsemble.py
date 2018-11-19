@@ -60,6 +60,11 @@ class IPClusterEnsemble(SurveyEnsemble):
             sim:
 
         """
+        restartRuns = True # a boolean to determine whether there are runs left to run or not
+        numRunStarts = 1
+        #while restartRuns and nb_run_sim > 0: # will  continually try to entirely restart the remaining runs
+        restartRuns = False
+        print('Starting Runs for the ' + str(numRunStarts) + ' time')
 
         t1 = time.time()
         async_res = []
@@ -70,13 +75,14 @@ class IPClusterEnsemble(SurveyEnsemble):
         
         print("Submitted %d tasks."%len(async_res))
         
+
         runStartTime = time.time()#create job starting time
         avg_time_per_run = 0.
         tmplenoutstandingset = nb_run_sim
         tLastRunFinished = time.time()
         ar= self.rc._asyncresult_from_jobs(async_res)
         while not ar.ready():
-            ar.wait(10.)
+            ar.wait(20.)
             clear_output(wait=True)
             if ar.progress > 0:
                 timeleft = ar.elapsed/ar.progress * (nb_run_sim - ar.progress)
@@ -97,13 +103,21 @@ class IPClusterEnsemble(SurveyEnsemble):
                     tmplenoutstandingset = len(outstandingset)#update this. should decrease by ~1 or number of cores...
                     tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation finished (right now)
                     #self.vprint("tmplenoutstandingset %d, tLastRunFinished %0.6f"%(tmplenoutstandingset,tLastRunFinished))
-                if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2)*4.:
+                if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2):
+                    nb_run_sim = len(self.rc.outstanding)
+                    restartRuns = True
                     self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
-                    self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+                    self.rc.abort(jobs=self.rc.outstanding.copy().pop())
+                    #self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
+                    ar.wait(100)
+                    #self.rc.purge_everything() # purge all results if outstanding *because rc.abort() didn't seem to do the job right
                     tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation was restarted (right now)
 
             print("%4i/%i tasks finished after %4i s. About %s to go." % (ar.progress, nb_run_sim, ar.elapsed, timeleftstr), end="")
             sys.stdout.flush()
+        numRunStarts += 1 # increment number of run restarts
+
+
 
         t2 = time.time()
         print("\nCompleted in %d sec" % (t2 - t1))
