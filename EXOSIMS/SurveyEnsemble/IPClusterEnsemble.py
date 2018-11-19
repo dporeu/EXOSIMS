@@ -97,7 +97,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                     tmplenoutstandingset = len(outstandingset)#update this. should decrease by ~1 or number of cores...
                     tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation finished (right now)
                     #self.vprint("tmplenoutstandingset %d, tLastRunFinished %0.6f"%(tmplenoutstandingset,tLastRunFinished))
-                if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2):
+                if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2)*4.:
                     self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
                     self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
                     tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation was restarted (right now)
