@@ -16,6 +16,8 @@ import os.path
 import cPickle
 import random
 import traceback
+from subprocess import call
+import subprocess
 
 
 class IPClusterEnsemble(SurveyEnsemble):
@@ -66,6 +68,11 @@ class IPClusterEnsemble(SurveyEnsemble):
         # restartRuns = False
         # print('Starting Runs for the ' + str(numRunStarts) + ' time')
 
+        #Start IPCluster
+        startIPClusterCommand = subprocess.Popen(['ipcluster','start','-n','24'])
+        startIPClusterCommand.wait()
+        self.vprint(startIPClusterCommand.stdout)
+
         t1 = time.time()
         async_res = []
         for j in range(nb_run_sim):
@@ -81,6 +88,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         tmplenoutstandingset = nb_run_sim
         tLastRunFinished = time.time()
         ar= self.rc._asyncresult_from_jobs(async_res)
+        pids = ar.get_dict()
         while not ar.ready():
             ar.wait(20.)
             clear_output(wait=True)
@@ -103,11 +111,17 @@ class IPClusterEnsemble(SurveyEnsemble):
                     tmplenoutstandingset = len(outstandingset)#update this. should decrease by ~1 or number of cores...
                     tLastRunFinished = time.time()#update tLastRunFinished to the last time a simulation finished (right now)
                     #self.vprint("tmplenoutstandingset %d, tLastRunFinished %0.6f"%(tmplenoutstandingset,tLastRunFinished))
-                if time.time() - tLastRunFinished > avg_time_per_run*(1 + self.maxNumEngines*2)*4.:
+                if time.time() - tLastRunFinished > avg_time_per_run*(1. + self.maxNumEngines*2.)*4.:
                     #nb_run_sim = len(self.rc.outstanding)
                     #restartRuns = True
                     self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
-                    self.rc.abort(jobs=self.rc.outstanding.copy().pop())
+                    runningPIDS = os.listdir('/proc') # get all running pids
+                    for pid in pids:
+                        if pid in runningPIDS:
+                            os.kill(pid,9) # send kill command to stop this worker
+                    stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
+                    #call(["ipcluster","stop"]) # send command to stop ipcluster
+                    #self.rc.abort(jobs=self.rc.outstanding.copy().pop())
                     #self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
                     #ar.wait(100)
                     #self.rc.purge_everything() # purge all results if outstanding *because rc.abort() didn't seem to do the job right
