@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from ipyparallel import Client
-from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
+#from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
 from EXOSIMS.util.get_module import get_module
 import time
 from IPython.core.display import clear_output
@@ -72,6 +72,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         startIPClusterCommand = subprocess.Popen(['ipcluster','start','-n','24'])
         startIPClusterCommand.wait()
         self.vprint(startIPClusterCommand.stdout)
+        from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
 
         t1 = time.time()
         async_res = []
@@ -129,6 +130,9 @@ class IPClusterEnsemble(SurveyEnsemble):
 
             print("%4i/%i tasks finished after %4i s. About %s to go." % (ar.progress, nb_run_sim, ar.elapsed, timeleftstr), end="")
             sys.stdout.flush()
+        stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
+        stopIPClusterCommand.wait()
+        self.vprint(stopIPClusterCommand.stdout)
         #numRunStarts += 1 # increment number of run restarts
 
 
