@@ -181,4 +181,6 @@ if __name__ == "__main__":
         queueData['numRuns'].remove(queueData['numRuns'][0])#remove numRuns from list
         del sim #required otherwise data can be passed between sim objects (observed when running e2eTests.py)
         del res, scriptfile, numRuns, kwargs #deleting these as well as a percaution
+    stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
+    time.sleep(20) # doing this instead of waiting for ipcluster to terminate
     vprint('Done running all jobs')
