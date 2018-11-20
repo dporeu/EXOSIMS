@@ -157,7 +157,7 @@ if __name__ == "__main__":
         # Check if ipcluster is running
         #Start IPCluster
         startIPClusterCommand = subprocess.Popen(['ipcluster','start','-n','24'])
-        startIPClusterCommand.wait()
+        time.sleep(80)
         tvprint(startIPClusterCommand.stdout)
 
         outpath = outpathCore + str(queueData['scriptNames'][0].split('.')[0])
