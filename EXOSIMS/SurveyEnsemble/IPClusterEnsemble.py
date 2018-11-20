@@ -112,7 +112,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                     self.vprint(str(self.rc.queue_status()))
                     runningPIDS = [int(tpid) for tpid in os.listdir('/proc') if tpid.isdigit()]
                     #[self.rc.queue_status()[eind] for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]
-                    for engineInd in [eind for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]
+                    for engineInd in [eind for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]:
                         os.kill(engine_pids[engineInd],9)
                     # for pid in [engine_pids[eind] for eind in np.arange(len(engine_pids))]:
                     #     if pid in runningPIDS:
