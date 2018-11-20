@@ -10,21 +10,23 @@ import time
 
 Logger = logging.getLogger(__name__)
 
-class SS_char_only(SurveySimulation):
+class SS_char_only2(SurveySimulation):
 
-    def __init__(self, coeffs=[1,0,0,0], **specs):
+    def __init__(self, occHIPs=[], **specs):
         
         SurveySimulation.__init__(self, **specs)
+
+        self._outspec['occHIPs'] = occHIPs
         
-        #verify that coefficients input is iterable 6x1
-        if not(isinstance(coeffs,(list,tuple,np.ndarray))) or (len(coeffs) != 4):
-            raise TypeError("coeffs must be a 3 element iterable")
-        
-        #normalize coefficients
-        coeffs = np.array(coeffs)
-        coeffs = coeffs/np.linalg.norm(coeffs)
-        
-        self.coeffs = coeffs
+        if occHIPs is not []:
+            occHIPs_path = os.path.join(EXOSIMS.__path__[0],'Scripts',occHIPs)
+            assert os.path.isfile(occHIPs_path), "%s is not a file."%occHIPs_path
+            HIPsfile = open(occHIPs_path, 'r').read()
+            self.occHIPs = HIPsfile.split(',')
+            if len(self.occHIPs) <= 1:
+                self.occHIPs = HIPsfile.split('\n')
+        else:
+            self.occHIPs = occHIPs
 
     def run_sim(self):
         """Performs the survey simulation 
@@ -91,21 +93,6 @@ class SS_char_only(SurveySimulation):
                 self.logger.info(log_obs)
                 print log_obs
 
-                # PERFORM DETECTION and populate revisit list attribute.
-                # # First store fEZ, dMag, WA
-                # if np.any(pInds):
-                #     DRM['det_fEZ'] = SU.fEZ[pInds].to('1/arcsec2').value.tolist()
-                #     DRM['det_dMag'] = SU.dMag[pInds].tolist()
-                #     DRM['det_WA'] = SU.WA[pInds].to('mas').value.tolist()
-                # detected, detSNR, FA = self.observation_detection(sInd, t_det, detMode)
-                # # Update the occulter wet mass
-                # if OS.haveOcculter == True:
-                #     DRM = self.update_occulter_mass(DRM, sInd, t_det, 'det')
-                # # Populate the DRM with detection results
-                # DRM['det_time'] = t_det.to('day').value
-                # DRM['det_status'] = detected
-                # DRM['det_SNR'] = detSNR
-
                 FA = False
                 
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
@@ -168,83 +155,37 @@ class SS_char_only(SurveySimulation):
             print log_end
 
 
-    def choose_next_target(self, old_sInd, sInds, slewTimes, t_dets):
-        """Choose next target based on truncated depth first search 
-        of linear cost function.
+    def choose_next_target(self, old_sInd, sInds, slewTimes, intTimes):
+        """Choose next target at random
         
         Args:
             old_sInd (integer):
                 Index of the previous target star
             sInds (integer array):
                 Indices of available targets
-            slewTime (float array):
+            slewTimes (astropy quantity array):
                 slew times to all stars (must be indexed by sInds)
-            t_dets (astropy Quantity array):
+            intTimes (astropy Quantity array):
                 Integration times for detection in units of day
-                
+        
         Returns:
             sInd (integer):
                 Index of next target star
         
         """
-
-        OS = self.OpticalSystem
-        Comp = self.Completeness
+        
         TL = self.TargetList
-        TK = self.TimeKeeping
-        
-        # reshape sInds
-        sInds = np.array(sInds, ndmin=1)
-        
-        # current star has to be in the adjmat
-        if (old_sInd is not None) and (old_sInd not in sInds):
-            sInds = np.append(sInds, old_sInd)
-        
-        # calculate dt since previous observation
-        dt = TK.currentTimeNorm + slewTimes[sInds] - self.lastObsTimes[sInds]
-        # get dynamic completeness values
-        comps = Comp.completeness_update(TL, sInds, self.starVisits[sInds], dt)
-        
-        # if first target, or if only 1 available target, choose highest available completeness
-        nStars = len(sInds)
-        if (old_sInd is None) or (nStars == 1):
-            sInd = np.random.choice(sInds[comps == max(comps)])
-            return sInd
-        
-        # define adjacency matrix
-        A = np.zeros((nStars,nStars))
-        
-        # only consider slew distance when there's an occulter
-        if OS.haveOcculter:
-            #r_ts = Obs.starprop(TL, sInds, TK.currentTimeAbs)
-            r_ts = TL.starprop(sInds, TK.currentTimeAbs)
-            u_ts = (r_ts.value.T/np.linalg.norm(r_ts,axis=1)).T
-            angdists = np.arccos(np.clip(np.dot(u_ts,u_ts.T),-1,1))
-            A[np.ones((nStars),dtype=bool)] = angdists
-            A = self.coeffs[0]*(A)/np.pi
-        
-        # add factor due to completeness
-        A = A + self.coeffs[1]*(1-comps)
-        
-        # add factor due to unvisited ramp
-        f_uv = np.zeros(nStars)
-        f_uv[self.starVisits[sInds]==0] = float(TK.currentTimeNorm/TK.missionFinishNorm)**2
-        A = A - self.coeffs[2]*f_uv
 
-        # add factor due to revisited ramp
-        if np.any(self.starRevisit):
-            f2_uv = np.where(self.starVisits[sInds] > 0, 1, 0) *\
-                    (1 - (np.in1d(sInds, self.starRevisit[:,0],invert=True)))
-            A = A + self.coeffs[3]*f2_uv
+        # cast sInds to array
+        sInds = np.array(sInds, ndmin=1, copy=False)
+        occ_sInds = np.where(np.in1d(TL.Name, self.occHIPs))[0]
+        n_sInds = np.intersect1d(sInds, occ_sInds)
         
-        # kill diagonal
-        A = A + np.diag(np.ones(nStars)*np.Inf)
-        
-        # take two traversal steps
-        step1 = np.tile(A[sInds==old_sInd,:],(nStars,1)).flatten('F')
-        step2 = A[np.array(np.ones((nStars,nStars)),dtype=bool)]
-        tmp = np.argmin(step1+step2)
-        sInd = sInds[int(np.floor(tmp/float(nStars)))]
+        # pick one
+        if len(n_sInds) == 0:
+            sInd = np.random.choice(sInds)
+        else:
+            sInd = np.random.choice(n_sInds)
         
         return sInd
 
