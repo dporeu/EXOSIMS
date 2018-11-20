@@ -78,7 +78,7 @@ class IPClusterEnsemble(SurveyEnsemble):
         ar= self.rc._asyncresult_from_jobs(async_res)
         pids = ar.get_dict()
         while not ar.ready():
-            ar.wait(20.)
+            ar.wait(10.)
             clear_output(wait=True)
             if ar.progress > 0:
                 timeleft = ar.elapsed/ar.progress * (nb_run_sim - ar.progress)
@@ -108,7 +108,8 @@ class IPClusterEnsemble(SurveyEnsemble):
                         if pid in runningPIDS:
                             os.kill(pid,9) # send kill command to stop this worker
                     stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
-                    stopIPClusterCommand.wait() # waits for process to terminate
+                    time.sleep(20) # doing this instead of waiting for ipcluster to terminate
+                    #stopIPClusterCommand.wait() # waits for process to terminate
                     #call(["ipcluster","stop"]) # send command to stop ipcluster
                     #self.rc.abort(jobs=self.rc.outstanding.copy().pop())
                     #self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
