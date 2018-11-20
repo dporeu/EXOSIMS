@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from EXOSIMS.util.vprint import vprint
 from EXOSIMS.util.get_module import get_module
+from EXOSIMS.util.get_dirs import get_cache_dir
 import sys, logging
 import numpy as np
 import astropy.units as u
@@ -10,8 +11,6 @@ import random as py_random
 import time
 import json, os.path, copy, re, inspect, subprocess
 import hashlib
-import csv
-from numpy import nan
 
 Logger = logging.getLogger(__name__)
 
@@ -91,13 +90,16 @@ class SurveySimulation(object):
         scaleWAdMag (bool):
             If True, rescale dMagint and WAint for all stars based on luminosity and 
             to ensure that WA is within the IWA/OWA. Defaults False.
+        cachedir (str):
+            Path to cache directory
         
     """
 
     _modtype = 'SurveySimulation'
     
     def __init__(self, scriptfile=None, ntFlux=1, nVisitsMax=5, charMargin=0.15, 
-        WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, **specs):
+            WAint=None, dMagint=None, dt_max=1., scaleWAdMag=False, record_counts_path=None, 
+            nokoMap=False, cachedir=None, **specs):
         
         #start the outspec
         self._outspec = {}
@@ -127,6 +129,10 @@ class SurveySimulation(object):
         
         # load the vprint function (same line in all prototype module constructors)
         self.vprint = vprint(specs.get('verbose', True))
+
+        # count dict contains all of the C info for each star index
+        self.record_counts_path = record_counts_path
+        self.count_lines = []
         
         # mission simulation logger
         self.logger = specs.get('logger', logging.getLogger(__name__))
@@ -183,9 +189,9 @@ class SurveySimulation(object):
             for modName in specs['modules'].keys():
                 assert (specs['modules'][modName]._modtype == modName), \
                         "Provided instance of %s has incorrect modtype."%modName
-                
+
                 setattr(self, modName, specs['modules'][modName])
-        
+
         # create a dictionary of all modules, except StarCatalog
         self.modules = {}
         self.modules['PlanetPopulation'] = self.PlanetPopulation
@@ -215,6 +221,11 @@ class SurveySimulation(object):
         # maximum time for revisit window    
         self.dt_max = float(dt_max)*u.week
         self._outspec['dt_max'] = self.dt_max.value
+
+        # cache directory
+        self.cachedir = get_cache_dir(cachedir)
+        self._outspec['cachedir'] = self.cachedir
+        specs['cachedir'] = self.cachedir
 
         # load the dMag and WA values for integration:
         # - dMagint defaults to the completeness limiting delta magnitude
@@ -250,7 +261,7 @@ class SurveySimulation(object):
             assert (len(self.WAint) == TL.nStars), \
                     "Input WAint array doesn't match number of target stars."
             self._outspec['WAint'] = self.WAint.to('arcsec').value
-        
+
         #if requested, rescale based on luminosities and mode limits
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
@@ -277,7 +288,8 @@ class SurveySimulation(object):
         # getting keepout map for entire mission
         startTime = self.TimeKeeping.missionStart.copy()
         endTime   = self.TimeKeeping.missionFinishAbs.copy()
-        self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
+        if not(nokoMap):
+            self.koMap,self.koTimes = self.Observatory.generate_koMap(TL,startTime,endTime)
 
         # choose observing modes selected for detection (default marked with a flag)
         allModes = OS.observingModes
@@ -659,6 +671,32 @@ class SurveySimulation(object):
         fEZ = self.ZodiacalLight.fEZ0
         dMag = self.dMagint[sInds]
         WA = self.WAint[sInds]
+
+        # save out file containing photon count info
+        if self.record_counts_path is not None and len(self.count_lines) == 0:
+            C_p, C_b, C_sp, C_extra = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode, returnExtra=True)
+            import csv
+            count_fpath = os.path.join(self.record_counts_path, 'counts')
+
+            if not os.path.exists(count_fpath):
+                os.mkdir(count_fpath)
+
+            outfile = os.path.join(count_fpath, str(self.seed)+'.csv')
+            self.count_lines.append(["sInd", "HIPs", "C_F0", "C_p0", "C_sr", "C_z", 
+                                     "C_ez", "C_dc", "C_cc", "C_rn", "C_p", "C_b", "C_sp"])
+
+            for i, sInd in enumerate(sInds):
+                self.count_lines.append([sInd, self.TargetList.Name[sInd], 
+                                        C_extra['C_F0'][0].value, C_extra['C_sr'][i].value, 
+                                        C_extra['C_z'][i].value, C_extra['C_ez'][i].value,
+                                        C_extra['C_dc'][i].value, C_extra['C_cc'][i].value, 
+                                        C_extra['C_rn'][i].value, C_p[i].value, C_b[i].value,
+                                        C_sp[i].value])
+
+            with open(outfile, 'w') as csvfile:
+                c = csv.writer(csvfile)
+                c.writerows(self.count_lines)
+
         intTimes = self.OpticalSystem.calc_intTime(self.TargetList, sInds, fZ, fEZ, dMag, WA, mode)
         
         return intTimes
@@ -743,11 +781,6 @@ class SurveySimulation(object):
         OS  = self.OpticalSystem
         Obs = self.Observatory
         TL  = self.TargetList
-        TK  = self.TimeKeeping
-        
-        # allocate settling time + overhead time
-        tmpCurrentTimeAbs = TK.currentTimeAbs.copy() + Obs.settlingTime + mode['syst']['ohTime']
-
         
         # initializing arrays
         obsTimeArray = np.zeros([TL.nStars,50])*u.d
@@ -762,20 +795,19 @@ class SurveySimulation(object):
         intTimeArray[sInds,1] = self.calc_targ_intTime(sInds, Time(obsTimeArray[sInds,-1],format='mjd',scale='tai'), mode) 
         
         # determining which scheme to use to filter slews
-        # (SotoStarshade sets slewTimes = obsTimes[0] i.e. time at which stars first leave keepout)
-        switch = ( obsTimes[0] - tmpCurrentTimeAbs - slewTimes ).to('d')
+        obsModName = Obs.__class__.__name__
         
+        # slew times have not been calculated/decided yet (SotoStarshade)
+        if obsModName == 'SotoStarshade':
+            sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
+                                            slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
+            
         # slew times were calculated/decided beforehand (Observatory Prototype)
-        if all( abs(switch) > 1*u.min ):
+        else:
             sInds, intTimes, slewTimes = self.filterOcculterSlews(sInds, slewTimes[sInds], \
                                                 obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
             dV = np.zeros(len(sInds))*u.m/u.s
-        
-        # slew times have not been calculated/decided yet (SotoStarshade)
-        else: 
-            sInds,intTimes,slewTimes,dV = self.findAllowableOcculterSlews(sInds, old_sInd, sd[sInds], \
-                                                slewTimes[sInds], obsTimeArray[sInds,:], intTimeArray[sInds,:], mode)
-        
+
         return sInds, slewTimes, intTimes, dV
     
     def filterOcculterSlews(self, sInds, slewTimes, obsTimeArray, intTimeArray, mode):
@@ -835,11 +867,16 @@ class SurveySimulation(object):
         # 2. find OBnumber for each sInd's slew time
         if len(TK.OBendTimes) > 1:
             for i in range(len(sInds)):
+                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1]
+                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0]
                 
-                S = np.where(TK.OBstartTimes.value - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #start
-                F = np.where(TK.OBendTimes.value   - tmpCurrentTimeNorm.value < slewTimes[i].value)[0][-1] #finish
-    
-                # slew occurs within an OB
+                # case when slews are in the first OB
+                if F.shape[0] == 0:
+                    F = -1
+                else:
+                    F = F[-1]
+                    
+                # slew occurs within an OB (nth OB has started but hasn't ended)
                 if S != F: 
                     OBnumbers[i] = S
                     maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode, TK.OBstartTimes[S],S)
@@ -861,7 +898,6 @@ class SurveySimulation(object):
         # 3. start filtering process
         good_inds = np.where((OBnumbers >= 0) & (ObsTimeRange > intTimes.value))[0] 
         # ^ star slew within OB -AND- can finish observing before it goes back into keepout
-    
         if good_inds.shape[0] > 0:
             #the good ones
             sInds = sInds[good_inds]
@@ -880,14 +916,10 @@ class SurveySimulation(object):
                                   (slewTimes.reshape([len(sInds),1]).value < maxAllowedSlewTime) )[0]
             
             slewTimes = slewTimes[good_inds]
+        else:
+            slewTimes = slewTimes[good_inds]
         
-        # 3.5 showing some mercy if no slews are allowable
-        if good_inds.shape[0] == 0:
-            #replace slews with minimum allowed slew time
-            good_inds = np.where(minAllowedSlewTime.reshape([len(sInds),1]) < maxAllowedSlewTime.reshape([len(sInds),1]))[0]
-            slewTimes = minAllowedSlewTime[good_inds].flatten()*u.d
-        
-        return sInds[good_inds],intTimes[good_inds].flatten(),slewTimes
+        return sInds[good_inds], intTimes[good_inds].flatten(), slewTimes
     
     def findAllowableOcculterSlews(self, sInds, old_sInd, sd, slewTimes, obsTimeArray, intTimeArray, mode):
         """Filters occulter slews that have already been calculated/selected.
@@ -1252,7 +1284,6 @@ class SurveySimulation(object):
         TL = self.TargetList
         SU = self.SimulatedUniverse
 
-
         # in both cases (detection or false alarm), schedule a revisit 
         # based on minimum separation
         Ms = TL.MsTrue[sInd]
@@ -1272,7 +1303,6 @@ class SurveySimulation(object):
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
             T = 2.*np.pi*np.sqrt(sp**3/mu)
-
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
@@ -1744,8 +1774,8 @@ class SurveySimulation(object):
         cachefname += str(tmp1)#Planet Physical Model
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
         cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
-        fileloc = os.path.split(inspect.getfile(self.__class__))[0]
-        cachefname = os.path.join(fileloc,cachefname+os.extsep)#join into filepath and fname
+        # fileloc = os.path.split(inspect.getfile(self.__class__))[0]
+        cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
         return cachefname
 
