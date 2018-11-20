@@ -29,6 +29,7 @@ import random
 import argparse
 import traceback
 from EXOSIMS.util.vprint import vprint as tvprint
+import subprocess
 
 vprint = tvprint(True)
 
@@ -153,11 +154,18 @@ if __name__ == "__main__":
 
     #### Run over all Scripts in Queue #################################################################
     while(len(queueData['scriptNames']) > 0): # Iterate until there are no more 
+        # Check if ipcluster is running
+        #Start IPCluster
+        startIPClusterCommand = subprocess.Popen(['ipcluster','start','-n','24'])
+        startIPClusterCommand.wait()
+        tvprint(startIPClusterCommand.stdout)
+
         outpath = outpathCore + str(queueData['scriptNames'][0].split('.')[0])
         if not os.path.isdir(outpath): # IF the directory doesn't exist
             os.makedirs(outpath) # make directory
 
         scriptfile = queueData['scriptNames'][0] # pull first script name (will remove from list at end)
+        tvprint(scriptfile)
         numRuns = queueData['numRuns'][0] # pull first number of runs
         sim = EXOSIMS.MissionSim.MissionSim(ScriptsPath + makeSimilar_TemplateFolder + scriptfile)
         res = sim.genOutSpec(tofile = os.path.join(outpath,'outspec.json'))

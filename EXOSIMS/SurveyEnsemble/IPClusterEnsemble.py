@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from ipyparallel import Client
-#from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
+from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
 from EXOSIMS.util.get_module import get_module
 import time
 from IPython.core.display import clear_output
@@ -16,7 +16,6 @@ import os.path
 import cPickle
 import random
 import traceback
-from subprocess import call
 import subprocess
 
 
@@ -62,18 +61,6 @@ class IPClusterEnsemble(SurveyEnsemble):
             sim:
 
         """
-        # restartRuns = True # a boolean to determine whether there are runs left to run or not
-        # numRunStarts = 1
-        # #while restartRuns and nb_run_sim > 0: # will  continually try to entirely restart the remaining runs
-        # restartRuns = False
-        # print('Starting Runs for the ' + str(numRunStarts) + ' time')
-
-        #Start IPCluster
-        startIPClusterCommand = subprocess.Popen(['ipcluster','start','-n','24'])
-        startIPClusterCommand.wait()
-        self.vprint(startIPClusterCommand.stdout)
-        from EXOSIMS.Prototypes.SurveyEnsemble import SurveyEnsemble 
-
         t1 = time.time()
         async_res = []
         for j in range(nb_run_sim):
@@ -121,6 +108,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                         if pid in runningPIDS:
                             os.kill(pid,9) # send kill command to stop this worker
                     stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
+                    stopIPClusterCommand.wait()
                     #call(["ipcluster","stop"]) # send command to stop ipcluster
                     #self.rc.abort(jobs=self.rc.outstanding.copy().pop())
                     #self.rc.abort()#by default should abort all outstanding jobs... #it is possible that this will not stop the jobs running
@@ -130,9 +118,6 @@ class IPClusterEnsemble(SurveyEnsemble):
 
             print("%4i/%i tasks finished after %4i s. About %s to go." % (ar.progress, nb_run_sim, ar.elapsed, timeleftstr), end="")
             sys.stdout.flush()
-        stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
-        stopIPClusterCommand.wait()
-        self.vprint(stopIPClusterCommand.stdout)
         #numRunStarts += 1 # increment number of run restarts
 
 
