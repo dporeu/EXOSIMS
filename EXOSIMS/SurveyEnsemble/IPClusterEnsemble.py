@@ -108,10 +108,15 @@ class IPClusterEnsemble(SurveyEnsemble):
                     #restartRuns = True
                     self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
                     #runningPIDS = os.listdir('/proc') # get all running pids
+                    self.vprint('queue_status')
+                    self.vprint(str(self.rc.queue_status()))
                     runningPIDS = [int(tpid) for tpid in os.listdir('/proc') if tpid.isdigit()]
-                    for pid in engine_pids:
-                        if pid in runningPIDS:
-                            os.kill(pid,9) # send kill command to stop this worker
+                    #[self.rc.queue_status()[eind] for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]
+                    for engineInd in [eind for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]
+                        os.kill(engine_pids[engineInd],9)
+                    # for pid in [engine_pids[eind] for eind in np.arange(len(engine_pids))]:
+                    #     if pid in runningPIDS:
+                    #         os.kill(pid,9) # send kill command to stop this worker
                     stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
                     time.sleep(20) # doing this instead of waiting for ipcluster to terminate
                     break
