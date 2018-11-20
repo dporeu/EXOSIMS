@@ -70,13 +70,17 @@ class IPClusterEnsemble(SurveyEnsemble):
         
         print("Submitted %d tasks."%len(async_res))
         
+        engine_pids = self.rc[:].apply(os.getpid).get_dict()
+        #ar2 = self.lview.apply_async(os.getpid)
+        #pids = ar2.get_dict()
+        print('engine_pids')
+        print(engine_pids)
 
         runStartTime = time.time()#create job starting time
         avg_time_per_run = 0.
         tmplenoutstandingset = nb_run_sim
         tLastRunFinished = time.time()
         ar= self.rc._asyncresult_from_jobs(async_res)
-        pids = ar.get_dict()
         while not ar.ready():
             ar.wait(10.)
             clear_output(wait=True)
@@ -103,12 +107,14 @@ class IPClusterEnsemble(SurveyEnsemble):
                     #nb_run_sim = len(self.rc.outstanding)
                     #restartRuns = True
                     self.vprint('Aborting ' + str(len(self.rc.outstanding)) + 'qty outstandingset jobs')
-                    runningPIDS = os.listdir('/proc') # get all running pids
-                    for pid in pids:
+                    #runningPIDS = os.listdir('/proc') # get all running pids
+                    runningPIDS = [int(tpid) for tpid in os.listdir('/proc') if tpid.isdigit()]
+                    for pid in engine_pids:
                         if pid in runningPIDS:
                             os.kill(pid,9) # send kill command to stop this worker
                     stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
                     time.sleep(20) # doing this instead of waiting for ipcluster to terminate
+                    break
                     #stopIPClusterCommand.wait() # waits for process to terminate
                     #call(["ipcluster","stop"]) # send command to stop ipcluster
                     #self.rc.abort(jobs=self.rc.outstanding.copy().pop())
