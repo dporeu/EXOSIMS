@@ -111,6 +111,8 @@ class IPClusterEnsemble(SurveyEnsemble):
                     #runningPIDS = os.listdir('/proc') # get all running pids
                     self.vprint('queue_status')
                     self.vprint(str(self.rc.queue_status()))
+                    self.rc.abort()
+                    ar.wait(20)
                     runningPIDS = [int(tpid) for tpid in os.listdir('/proc') if tpid.isdigit()]
                     #[self.rc.queue_status()[eind] for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]
                     for engineInd in [eind for eind in np.arange(self.maxNumEngines) if self.rc.queue_status()[eind]['tasks']>0]:
@@ -121,7 +123,11 @@ class IPClusterEnsemble(SurveyEnsemble):
                     #         os.kill(pid,9) # send kill command to stop this worker
                     stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
                     stopIPClusterCommand.wait()
-                    #time.sleep(20) # doing this instead of waiting for ipcluster to terminate
+                    time.sleep(60) # doing this instead of waiting for ipcluster to terminate
+                    stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
+                    stopIPClusterCommand.wait()
+                    time.sleep(60) # doing this instead of waiting for ipcluster to terminate
+
                     break
                     #stopIPClusterCommand.wait() # waits for process to terminate
                     #call(["ipcluster","stop"]) # send command to stop ipcluster
@@ -140,6 +146,6 @@ class IPClusterEnsemble(SurveyEnsemble):
         t2 = time.time()
         print("\nCompleted in %d sec" % (t2 - t1))
         
-        res = [ar.get() for ar in async_res]
+        res = [1]#[ar.get() for ar in async_res]
         
         return res
