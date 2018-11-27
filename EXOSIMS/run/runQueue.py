@@ -70,37 +70,6 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
         
     return 0
 
-# def parse_qFPath(args):
-#     if args.qFPath is None:
-#         qFPath = './queue.json'#Default behavior
-#     else:
-#         qFPath = args.qFPath[0]
-#     assert os.path.isfile(qFPath), 'Queue File Path: %s does not exist' %qFPath
-#     qfname = qFPath.split('/')[-1]
-#     #Load Queue File
-#     with open(qFPath) as queueFile:
-#         queueData = json.load(queueFile)
-#     return qFPath, qfname, queueData
-
-# def parse_ScriptsPath(args, queueData):
-#     if args.ScriptsPath is None:
-#         ScriptsPath = './Scripts/'#Default. Explicitly when run from run folder
-#         if queueData.has_key('ScriptsPath'):
-#             ScriptsPath = queueData['ScriptsPath'] #extract from queue Folder
-#     else:
-#         ScriptsPath = args.ScriptsPath[0]
-#     return ScriptsPath
-
-# def parse_runLogPath(args,queueData):
-#     if args.runLogPath is None:
-#         runLogPath = '../../../cache/'#Default
-#         if queueData.has_key('runLogPath'):
-#             runLogPath = queueData['runLogPath'] #extract from queue Folder
-#     else:
-#         runLogPath = args.runLogPath[0]
-#     assert os.path.isdir(runLogPath), 'runLog Path: %s does not exist' %runLogPath
-#     return runLogPath
-
 def scriptNamesInScriptPath(queueData, ScriptsPath):
     #This function searches the ScriptsPath to determine if files are at the current level or 1 level down
     scriptfile = queueData['scriptNames'][0] #just grab first script file in list of .json files
@@ -116,15 +85,15 @@ def scriptNamesInScriptPath(queueData, ScriptsPath):
     assert os.path.isfile(ScriptsPath + makeSimilar_TemplateFolder + scriptfile), 'Scripts Path: %s does not exist' %ScriptsPath
     return makeSimilar_TemplateFolder, scriptfile
 
-def outpathCore(args,queueData):
-    if args.EXOSIMS_RUN_SAVE_PATH is None:
-        outpathCore = '../../../cache/'#Default
-        if queueData.has_key('EXOSIMS_RUN_SAVE_PATH'):
-            outpathCore = queueData['EXOSIMS_RUN_SAVE_PATH'] #extract from queue Folder
-    else:
-        outpathCore = args.EXOSIMS_RUN_SAVE_PATH[0]
-    assert os.path.isdir(outpathCore), 'oucpathCore: %s does not exist' %outpathCore
-    return outpathCore
+# def outpathCore(args,queueData):
+#     if args.EXOSIMS_RUN_SAVE_PATH is None:
+#         outpathCore = '../../../cache/'#Default
+#         if queueData.has_key('EXOSIMS_RUN_SAVE_PATH'):
+#             outpathCore = queueData['EXOSIMS_RUN_SAVE_PATH'] #extract from queue Folder
+#     else:
+#         outpathCore = args.EXOSIMS_RUN_SAVE_PATH[0]
+#     assert os.path.isdir(outpathCore), 'oucpathCore: %s does not exist' %outpathCore
+#     return outpathCore
 
 def extractArgs(args):
     """ Convert from args to a dict of parsed arguments of form {'EXOSIMS_RUN_SAVE_PATH':'/home/user/Doc...'}
