@@ -10,6 +10,8 @@ import os
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib.pyplot as pp 
     use('Agg')
+else:
+    import matplotlib.pyplot as pp 
 import mpl_toolkits.mplot3d
 #from pylab import * # Not sure if necessary
 import numpy as np
