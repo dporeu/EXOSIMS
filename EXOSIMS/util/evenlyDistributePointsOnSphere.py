@@ -94,6 +94,9 @@ def plotAllPoints(x,y,z,f,x0,con):
     fig = pp.figure(num=5006)
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(x, y, z, color='blue')
+    pp.rc('axes',linewidth=2)
+    pp.rc('lines',linewidth=2)
+    pp.rc('font',weight='bold')
     pp.show(block=False)
 
 
@@ -114,11 +117,11 @@ def plotAllPoints(x,y,z,f,x0,con):
     out4k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':4000})
     out4kx, out4ky, out4kz = splitOut(out4k)
     ax.scatter(out4kx, out4ky, out4kz,color='cyan')
-    pp.legend(['Initial','100 iter.','1k iter.','2k iter.','4k iter.'])
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    pp.title('Points Distributed on a Sphere')
+    pp.legend(['Initial','100 iter.','1k iter.','2k iter.','4k iter.'],loc='upper left')
+    ax.set_xlabel('X',weight='bold')
+    ax.set_ylabel('Y',weight='bold')
+    ax.set_zlabel('Z',weight='bold')
+    pp.title('Points Distributed on a Sphere',weight='bold')
     pp.show(block=False)
 
     # To Save this figure:
@@ -193,11 +196,14 @@ if __name__ == '__main__':
     meanDistances = np.asarray([np.mean(dist01k), np.mean(dist1k), np.mean(dist2k), np.mean(dist4k)])
 
     fig2 = pp.figure(num=5007)
-    pp.plot([100,1000,2000,3000],minimumDistances)
-    pp.plot([100,1000,2000,3000],maximumDistances)
-    pp.plot([100,1000,2000,3000],meanDistances)
-    pp.ylabel('Distances (1 is the radius of the sphere)')
-    pp.xlabel('Number of Optimization Iterations')
+    pp.rc('axes',linewidth=2)
+    pp.rc('lines',linewidth=2)
+    pp.rc('font',weight='bold')
+    pp.plot([100,1000,2000,3000],minimumDistances,marker='s',linestyle = 'None')
+    pp.plot([100,1000,2000,3000],maximumDistances,marker='o',linestyle = 'None')
+    pp.plot([100,1000,2000,3000],meanDistances,marker='v',linestyle = 'None')
+    pp.ylabel('Distances (1 is the radius of the sphere)',weight='bold')
+    pp.xlabel('Number of Optimization Iterations',weight='bold')
     pp.legend(['min(Dist)','max(Dist)','mean(Dist)'])
     pp.show(block=False)
 
