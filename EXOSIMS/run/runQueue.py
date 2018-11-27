@@ -14,6 +14,7 @@ If no keys exist in the JSON file and No arguments are passed in, the '../../../
 The --qFPath file must contain a list of 'scriptNames' and 'numRuns'.
 Written by Dean Keithly 4/27/2018
 Updated 10/11/2018
+Updated 11/26/2018
 """
 import json
 import os
@@ -85,16 +86,6 @@ def scriptNamesInScriptPath(queueData, ScriptsPath):
     assert os.path.isfile(ScriptsPath + makeSimilar_TemplateFolder + scriptfile), 'Scripts Path: %s does not exist' %ScriptsPath
     return makeSimilar_TemplateFolder, scriptfile
 
-# def outpathCore(args,queueData):
-#     if args.EXOSIMS_RUN_SAVE_PATH is None:
-#         outpathCore = '../../../cache/'#Default
-#         if queueData.has_key('EXOSIMS_RUN_SAVE_PATH'):
-#             outpathCore = queueData['EXOSIMS_RUN_SAVE_PATH'] #extract from queue Folder
-#     else:
-#         outpathCore = args.EXOSIMS_RUN_SAVE_PATH[0]
-#     assert os.path.isdir(outpathCore), 'oucpathCore: %s does not exist' %outpathCore
-#     return outpathCore
-
 def extractArgs(args):
     """ Convert from args to a dict of parsed arguments of form {'EXOSIMS_RUN_SAVE_PATH':'/home/user/Doc...'}
     Args:
@@ -107,11 +98,7 @@ def extractArgs(args):
     myArgs = [arg for arg in dir(args) if 'EXOSIMS' in arg and not args.__getattribute__(arg) == None]
     for arg in myArgs:
         paths = {arg : args.__dict__[arg][0]}
-    #'EXOSIMS_RUN_SAVE_PATH':args.EXOSIMS_RUN_SAVE_PATH[0],
-    #'EXOSIMS_SCRIPTS_PATH':args.EXOSIMS_SCRIPTS_PATH[0],
-    #'EXOSIMS_RUN_LOG_PATH':args.EXOSIMS_RUN_LOG_PATH[0],
-    #'EXOSIMS_QUEUE_FILE_PATH':args.EXOSIMS_QUEUE_FILE_PATH[0]
-    #}
+
     EXOSIMS_QUEUE_FILE_PATH = paths['EXOSIMS_QUEUE_FILE_PATH']
     if args.numCores == None:
         args.numCores == ['1']
@@ -138,13 +125,7 @@ if __name__ == "__main__":
     #### Get all paths
     paths = get_paths(qFile=queueData,specs=None,qFargs=qFargs)
 
-
-
-    #DELETE qFPath, qfname, queueData = parse_qFPath(args) # Parse the queue full filepath, filename, and Json Data
-    #DELETE ScriptsPath = parse_ScriptsPath(args, queueData) # ScriptsPath (folder containing all scripts)
-    #DELETE runLogPath = parse_runLogPath(args,queueData) # runLogPath (full path to folder containing runLog.csv)
     makeSimilar_TemplateFolder, scriptfile = scriptNamesInScriptPath(queueData, paths['EXOSIMS_SCRIPTS_PATH']) # Check if scriptNames in EXOSIMS_SCRIPTS_PATH
-    #DELETE outpathCore = outpathCore(args, queueData) # parse the outpath from user input or queuefile
 
     ####Check if Any of the Scripts have already been run... and remove from scriptNames list ##########
     try:#check through log file if it exists
