@@ -29,10 +29,15 @@ class SLSQPScheduler(SurveySimulation):
     
     """
 
-    def __init__(self, cacheOptTimes=False, staticOptTimes=False, **specs):
+    def __init__(self, cacheOptTimes=False, staticOptTimes=False, selectionMetric='maxC', Izod='current',
+        maxiter=100, ftol=1e-4, **specs): #fZminObs=False,
         
         #initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
+
+        #Calculate fZmax
+        self.valfZmax, self.absTimefZmax = self.ZodiacalLight.calcfZmax(np.arange(self.TargetList.nStars), self.Observatory, self.TargetList,
+            self.TimeKeeping, filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0], self.cachefname)
 
         assert isinstance(staticOptTimes, bool), 'staticOptTimes must be boolean.'
         self.staticOptTimes = staticOptTimes
@@ -40,6 +45,29 @@ class SLSQPScheduler(SurveySimulation):
 
         assert isinstance(cacheOptTimes, bool), 'cacheOptTimes must be boolean.'
         self._outspec['cacheOptTimes'] = cacheOptTimes
+
+        assert selectionMetric in ['maxC','Izod-Izodmin','Izod-Izodmax',
+            '(Izod-Izodmin)/(Izodmax-Izodmin)',
+            '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzod', #(Izod-Izodmin)/(Izodmax-Izodmin)/CIzodmin is simply this but with Izod='fZmin'
+            'TauIzod/CIzod', #TauIzodmin/CIzodmin is simply this but with Izod='fZmin'
+            'random',
+            'priorityObs'],
+            'selectionMetric not valid input' # Informs what selection metric to use
+        self.selectionMetric = selectionMetric
+
+        assert Izod in ['fZmin','fZ0','fZmax','current'], 'Izod not valid input' # Informs what Izod to optimize integration times for [fZmin, fZmin+45d, fZ0, fZmax, current]
+        self.Izod = Izod
+
+        assert isinstance(maxiter, int), 'maxiter is not an int' # maximum number of iterations to optimize integration times for
+        assert maxiter >= 1, 'maxiter must be positive real'
+        self.maxiter = maxiter
+
+        # assert isinstance(fZminObs, bool), 'fZminObs must be boolean' # True means Observations will occur at fZmin of targets
+        # self.fZminObs = fZminObs
+
+        assert isinstance(ftol, float), 'ftol must be boolean' # tolerance to place on optimization
+        assert ftol > 0, 'ftol must be positive real'
+        self.ftol = ftol
 
 
         #some global defs
@@ -114,11 +142,18 @@ class SLSQPScheduler(SurveySimulation):
             #now optimize the solution
             self.vprint('Optimizing baseline integration times.')
             sInds = np.arange(self.TargetList.nStars)
-            fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
+            if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
+                fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
+            elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
+                fZ = self.valfZmin
+            elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
+                fZ = self.valfZmax
+            elif self.Izod = 'current': # Use current fZ to calculate integration times
+                fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, self.TimeKeeping.currentTimeAbs.copy()+np.zeros(self.TargetList.nStars)*u.d, self.detmode)
             bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))]
             initguess = x0*self.t0.to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
-                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':100,'ftol':1e-4})
+                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':self.maxiter,'ftol':self.ftol})
 
             assert ires['success'], "Initial time optimization failed."
 
@@ -139,8 +174,8 @@ class SLSQPScheduler(SurveySimulation):
         Everything is in units of days
         """
 
-        tstars = (-Cb*eps*np.sqrt(np.log(10)) + np.sqrt((Cb*eps)**2.*np.log(10) + 
-                   5*Cb*Csp**2.*eps))/(2.0*Csp**2.*eps*np.log(10))
+        tstars = (-Cb*eps*np.sqrt(np.log(10.)) + np.sqrt((Cb*eps)**2.*np.log(10.) + 
+                   5.*Cb*Csp**2.*eps))/(2.0*Csp**2.*eps*np.log(10.))
         compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList, 
                 np.arange(self.TargetList.nStars), self.ZodiacalLight.fZ0, 
                 self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d)
@@ -241,19 +276,26 @@ class SLSQPScheduler(SurveySimulation):
             intTimes = self.t0[sInds]
         else:
             # assumed values for detection
-            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
+            if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
+                fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
+            elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
+                fZ = self.valfZmin
+            elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
+                fZ = self.valfZmax
+            elif self.Izod = 'current': # Use current fZ to calculate integration times
+                fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
 
 
 
             #### instead of actual time left, try bounding by maxTime - detection time used
             #need to update time used in choose_next_target
             
-            timeLeft = (self.TimeKeeping.missionLife - self.TimeKeeping.currentTimeNorm)*self.TimeKeeping.missionPortion
+            timeLeft = (self.TimeKeeping.missionLife.copy() - self.TimeKeeping.currentTimeNorm.copy())*self.TimeKeeping.missionPortion.copy()
             bounds = [(0,timeLeft.to(u.d).value) for i in range(len(sInds))]
 
             initguess = self.t0[sInds].to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
-                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':100,'ftol':1e-4})
+                    method='SLSQP', bounds=bounds, options={'disp':True,'maxiter':self.maxiter,'ftol':self.ftol})
             
             #update default times for these targets
             self.t0[sInds] = ires['x']*u.d
@@ -287,15 +329,101 @@ class SLSQPScheduler(SurveySimulation):
                 the amount of time to wait (this method returns None)
         
         """
-                
+        #Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
+        tmpsInds = sInds
+        sInds = sInds[np.where(intTimes.value > 1e-15)]#filter out any intTimes that are essentially 0
+        if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
+            sInds = tmpsInds #revert to the saved sInds
+            intTimes = (np.zeros(len(sInds)) + 1.)*u.d  
+
         # calcualte completeness values for current intTimes
-        fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
-                self.TimeKeeping.currentTimeAbs + slewTimes[sInds], self.detmode)
-        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
+        if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
+            fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
+        elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
+            fZ = self.valfZmin
+        elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
+            fZ = self.valfZmax
+        elif self.Izod = 'current': # Use current fZ to calculate integration times
+            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
+                self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
+        comps = self.Completeness.comp_per_intTime(intTimes[np.where(intTimes.value > 1e-15)], self.TargetList, sInds, fZ, 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
 
-        # choose target with maximum completeness
-        sInd = np.random.choice(sInds[comps == max(comps)])
+        #### Selection Metric Type
+        valfZmax = self.valfZmax[sInds]
+        valfZmin = self.valfZmin[sInds]
+        if self.selectionMetric == 'maxC': #A choose target with maximum completeness
+            sInd = np.random.choice(sInds[comps == max(comps)])
+        elif self.selectionMetric == 'Izod-Izodmin': #B choose target closest to its fZmin
+            selectInd = np.argmin(fZ - valfZmin)
+            sInd = sInds[selectInd]
+        elif self.selectionMetric == 'Izod-Izodmax': #C choose target furthest from fZmax
+            selectInd = np.argmin(fZ - valfZmax)#this is most negative when fZ is smallest 
+            sInd = sInds[selectInd]
+        elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)': #D choose target closest to fZmin with largest fZmin-fZmax variation
+            selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax))#this is most negative when fZ is smallest 
+            sInd = sInds[selectInd]
+        elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzod': #E = D + current completeness at intTime optimized at 
+            selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax)*(1./comps))
+            sInd = sInds[selectInd]
+        #F is simply E but where comp is calculated sing fZmin
+        # elif self.selectionMetric == '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzodmin': #F = D + current completeness at Izodmin and intTime
+        #     selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax)*(1./comps))
+        #     sInd = sInds[selectInd]
+        elif self.selectionMetric == 'TauIzod/CIzod': #G maximum C/T
+            selectInd = np.argmin(intTimes[np.where(intTimes.value > 1e-15)]/comps)
+            sInd = sInds[selectInd]
+        elif self.selectionMetric == 'random': #I random selection of available
+            sInd = np.random.choice(sInds)
+        elif self.selectionMetric == 'priorityObs': # Advances time to 
+            valfZmax = self.valfZmax[sInds].copy()
+            valfZmin = self.valfZmin[sInds].copy()
+            TK = self.TimeKeeping
+            COPYabsTimefZmin = self.absTimefZmin.value
+
+            #Time relative to now where fZmin occurs
+            timeWherefZminOccursRelativeToNow = COPYabsTimefZmin - TK.currentTimeAbs.value #of all targetss
+            zero = 0#TK.missionStart-TK.missionStart#hack to create a zero astropy time object
+            indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0] # find all inds that are less than 0
+            cnt = 0.
+            while len(indsLessThan0) > 0: #iterate until we know the next time in the future where fZmin occurs for all targets
+                cnt += 1.
+                timeWherefZminOccursRelativeToNow[indsLessThan0] = COPYabsTimefZmin[indsLessThan0] - TK.currentTimeAbs.value + cnt*365.25 #take original and add 365.25 until we get the right number of years to add
+                indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0]
+            timeToStartfZmins = timeWherefZminOccursRelativeToNow#contains all "next occuring" fZmins in absolute time
+
+            absTimefZminAfterNow = [timeToStartfZmins[i] for i in range(len(timeToStartfZmins)) if timeToStartfZmins[i] > 0. and i in sInds]#filter by times in future and times not filtered
+
+            nextAbsTime = min(np.asarray(absTimefZminAfterNow))#find the minimum time
+            sInd = np.where((timeToStartfZmins == nextAbsTime))[0][0]#find the index of the minimum time and return that sInd
+            del absTimefZminAfterNow
+
+            #Advance To fZmin of Target
+            success = self.TimeKeeping.advanceToAbsTime(Time(nextAbsTime+TK.currentTimeAbs.copy().value, format='mjd', scale='tai'), False)
+            waitTime = None
+
+            #Check if exoplanetObsTime would be exceeded
+            OS = self.OpticalSystem
+            Comp = self.Completeness
+            TL = self.TargetList
+            Obs = self.Observatory
+            TK = self.TimeKeeping
+            allModes = OS.observingModes
+            mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+            if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+                sInd = None
+                waitTime = 1.*u.d
+        #H is simply G but where comp and intTime are calculated using fZmin
+        #elif self.selectionMetric == 'TauIzodmin/CIzodmin': #H maximum C at fZmin / T at fZmin
+        #else:
+
+
+
+        if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
+            sInd = None
         
         return sInd, None
 
