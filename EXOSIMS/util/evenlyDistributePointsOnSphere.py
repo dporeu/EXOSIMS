@@ -8,10 +8,10 @@ This code creates a set of n points on a unit sphere which are approximately spa
 from numpy import pi, cos, sin, arccos, arange
 import os
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
-    import matplotlib.pyplot as pp 
+    import matplotlib.pyplot as plt 
     use('Agg')
 else:
-    import matplotlib.pyplot as pp 
+    import matplotlib.pyplot as plt 
 import mpl_toolkits.mplot3d
 #from pylab import * # Not sure if necessary
 import numpy as np
@@ -90,14 +90,14 @@ def plotAllPoints(x,y,z,f,x0,con):
         x0- flattened initial values to be shoved into objective function
         con- list of dicts of constraints to be placed on the values
     """
-    #pp.close(5006)
-    fig = pp.figure(num=5006)
+    #plt.close(5006)
+    fig = plt.figure(num=5006)
     ax = fig.add_subplot(111, projection='3d')
     ax.scatter(x, y, z, color='blue')
-    pp.rc('axes',linewidth=2)
-    pp.rc('lines',linewidth=2)
-    pp.rc('font',weight='bold')
-    pp.show(block=False)
+    plt.rc('axes',linewidth=2)
+    plt.rc('lines',linewidth=2)
+    plt.rc('font',weight='bold')
+    plt.show(block=False)
 
 
     out01k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':100})
@@ -107,22 +107,22 @@ def plotAllPoints(x,y,z,f,x0,con):
     out1k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':1000})
     out1kx, out1ky, out1kz = splitOut(out1k)
     ax.scatter(out1kx, out1ky, out1kz,color='red')
-    pp.show(block=False)
+    plt.show(block=False)
 
     out2k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':2000})
     out2kx, out2ky, out2kz = splitOut(out2k)
     ax.scatter(out2kx, out2ky, out2kz,color='green')
-    pp.show(block=False)
+    plt.show(block=False)
 
     out4k = minimize(f,x0, method='SLSQP',constraints=(con), options={'ftol':1e-4, 'maxiter':4000})
     out4kx, out4ky, out4kz = splitOut(out4k)
     ax.scatter(out4kx, out4ky, out4kz,color='cyan')
-    pp.legend(['Initial','100 iter.','1k iter.','2k iter.','4k iter.'],loc='upper left')
+    plt.legend(['Initial','100 iter.','1k iter.','2k iter.','4k iter.'],loc='uplter left')
     ax.set_xlabel('X',weight='bold')
     ax.set_ylabel('Y',weight='bold')
     ax.set_zlabel('Z',weight='bold')
-    pp.title('Points Distributed on a Sphere',weight='bold')
-    pp.show(block=False)
+    plt.title('Points Distributed on a Sphere',weight='bold')
+    plt.show(block=False)
 
     # To Save this figure:
     # gca()
@@ -195,15 +195,15 @@ if __name__ == '__main__':
     maximumDistances = np.asarray([max(dist01k), max(dist1k), max(dist2k), max(dist4k)])
     meanDistances = np.asarray([np.mean(dist01k), np.mean(dist1k), np.mean(dist2k), np.mean(dist4k)])
 
-    fig2 = pp.figure(num=5007)
-    pp.rc('axes',linewidth=2)
-    pp.rc('lines',linewidth=2)
-    pp.rc('font',weight='bold')
-    pp.plot([100,1000,2000,3000],minimumDistances,marker='s',linestyle = 'None')
-    pp.plot([100,1000,2000,3000],maximumDistances,marker='o',linestyle = 'None')
-    pp.plot([100,1000,2000,3000],meanDistances,marker='v',linestyle = 'None')
-    pp.ylabel('Distances (1 is the radius of the sphere)',weight='bold')
-    pp.xlabel('Number of Optimization Iterations',weight='bold')
-    pp.legend(['min(Dist)','max(Dist)','mean(Dist)'])
-    pp.show(block=False)
+    fig2 = plt.figure(num=5007)
+    plt.rc('axes',linewidth=2)
+    plt.rc('lines',linewidth=2)
+    plt.rc('font',weight='bold')
+    plt.plot([100,1000,2000,3000],minimumDistances,marker='s',linestyle = 'None')
+    plt.plot([100,1000,2000,3000],maximumDistances,marker='o',linestyle = 'None')
+    plt.plot([100,1000,2000,3000],meanDistances,marker='v',linestyle = 'None')
+    plt.ylabel('Distances (1 is the radius of the sphere)',weight='bold')
+    plt.xlabel('Number of Optimization Iterations',weight='bold')
+    plt.legend(['min(Dist)','max(Dist)','mean(Dist)'])
+    plt.show(block=False)
 
