@@ -51,8 +51,7 @@ class SLSQPScheduler(SurveySimulation):
             '(Izod-Izodmin)/(Izodmax-Izodmin)/CIzod', #(Izod-Izodmin)/(Izodmax-Izodmin)/CIzodmin is simply this but with Izod='fZmin'
             'TauIzod/CIzod', #TauIzodmin/CIzodmin is simply this but with Izod='fZmin'
             'random',
-            'priorityObs'],
-            'selectionMetric not valid input' # Informs what selection metric to use
+            'priorityObs'], 'selectionMetric not valid input' # Informs what selection metric to use
         self.selectionMetric = selectionMetric
 
         assert Izod in ['fZmin','fZ0','fZmax','current'], 'Izod not valid input' # Informs what Izod to optimize integration times for [fZmin, fZmin+45d, fZ0, fZmax, current]
@@ -148,7 +147,7 @@ class SLSQPScheduler(SurveySimulation):
                 fZ = self.valfZmin
             elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
                 fZ = self.valfZmax
-            elif self.Izod = 'current': # Use current fZ to calculate integration times
+            elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, self.TimeKeeping.currentTimeAbs.copy()+np.zeros(self.TargetList.nStars)*u.d, self.detmode)
             bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))]
             initguess = x0*self.t0.to(u.d).value
@@ -282,7 +281,7 @@ class SLSQPScheduler(SurveySimulation):
                 fZ = self.valfZmin
             elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
                 fZ = self.valfZmax
-            elif self.Izod = 'current': # Use current fZ to calculate integration times
+            elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
 
 
@@ -343,7 +342,7 @@ class SLSQPScheduler(SurveySimulation):
             fZ = self.valfZmin
         elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
             fZ = self.valfZmax
-        elif self.Izod = 'current': # Use current fZ to calculate integration times
+        elif self.Izod == 'current': # Use current fZ to calculate integration times
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
                 self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
         comps = self.Completeness.comp_per_intTime(intTimes[np.where(intTimes.value > 1e-15)], self.TargetList, sInds, fZ, 
