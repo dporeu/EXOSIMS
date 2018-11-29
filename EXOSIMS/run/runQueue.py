@@ -95,9 +95,10 @@ def extractArgs(args):
         numCoresString (string) - string of the number of cores to run ipcluster with
         qFargs (dict) - dictionary of paths from parsed runQueue arguments of form {'EXOSIMS_RUN_SAVE_PATH':'/home/user/Doc...'}
     """
-    myArgs = [arg for arg in dir(args) if 'EXOSIMS' in arg and not args.__getattribute__(arg) == None]
+    myArgs = [arg for arg in args.__dict__.keys() if 'EXOSIMS' in arg and not args.__getattribute__(arg) == None]
+    paths = dict()
     for arg in myArgs:
-        paths = {arg : args.__dict__[arg][0]}
+        paths[arg] =  args.__dict__[arg][0]
 
     EXOSIMS_QUEUE_FILE_PATH = paths['EXOSIMS_QUEUE_FILE_PATH']
     if args.numCores == None:
