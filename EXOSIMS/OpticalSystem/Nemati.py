@@ -137,6 +137,7 @@ class Nemati(OpticalSystem):
         dMagLim = np.zeros(len(sInds)) + TL.Completeness.dMagLim
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
+        intTimes[intTimes.value < 0.] = 0.
         tmp = np.nan_to_num(C_b/intTimes)
         assert all(tmp + C_sp**2 >= 0.) , 'Invalid value in Nemati sqrt, '
         dMag = -2.5*np.log10((SNR*np.sqrt(tmp + C_sp**2.)/(C_F0*10.0**(-0.4*mV)*core_thruput*inst['PCeff'])).decompose().value)
