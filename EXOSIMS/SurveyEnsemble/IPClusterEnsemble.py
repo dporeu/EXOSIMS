@@ -62,6 +62,7 @@ class IPClusterEnsemble(SurveyEnsemble):
             sim:
 
         """
+        hangingRunsOccured = False # keeps track of whether hanging runs have occured
         t1 = time.time()
         async_res = []
         for j in range(nb_run_sim):
@@ -127,7 +128,7 @@ class IPClusterEnsemble(SurveyEnsemble):
                     stopIPClusterCommand = subprocess.Popen(['ipcluster','stop'])
                     stopIPClusterCommand.wait()
                     time.sleep(60) # doing this instead of waiting for ipcluster to terminate
-
+                    hangingRunsOccured = True # keeps track of whether hanging runs have occured
                     break
                     #stopIPClusterCommand.wait() # waits for process to terminate
                     #call(["ipcluster","stop"]) # send command to stop ipcluster
@@ -146,6 +147,9 @@ class IPClusterEnsemble(SurveyEnsemble):
         t2 = time.time()
         print("\nCompleted in %d sec" % (t2 - t1))
         
-        res = [1]#[ar.get() for ar in async_res]
+        if hangingRunsOccured: #hanging runs have occured
+            res = [1]
+        else:
+            res = [ar.get() for ar in async_res]
         
         return res
