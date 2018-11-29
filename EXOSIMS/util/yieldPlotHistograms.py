@@ -113,6 +113,7 @@ import numpy as np
 from cycler import cycler
 import math
 import datetime
+import re
 
 #res1 = gen_summary('/home/dean/drk94_starkAYOoct21_2017')
 #res2 = gen_summary('/home/dean/drk94_starkAYOstaticSchedulefZmin')#starkAYOoct9_2017')
@@ -286,7 +287,7 @@ class yieldPlotHistograms(object):
     """
     _modtype = 'util'
 
-    def __init__(self, args):
+    def __init__(self, args=None):
         """
         Args:
             args is not used
@@ -300,7 +301,8 @@ class yieldPlotHistograms(object):
             folder (string) - full filepath to folder containing runs
         """
         res = gen_summary(folder)
-        dist_plot(res)
+        self.res = res
+        self.dist_plot([res['detected']],PPoutpath=PPoutpath,folder=folder)
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Generates a yield histograms for the provided run_types
@@ -310,11 +312,12 @@ class yieldPlotHistograms(object):
         """
         resList = list()
         for folder in folders:
-            resList.append(gen_summary(folder))
-        dist_plot(resList,PPoutpath=PPoutpath)
+            resList.append(gen_summary(folder)['detected'])
+        self.resList = resList
+        self.dist_plot(resList,PPoutpath=PPoutpath,folder=folder)
 
 
-    def dist_plot(res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None,PPoutpath=os.getcwd(),folder=None):
+    def dist_plot(self,res,uniq = True,fig=None,lstyle='--',plotmeans=True,legtext=None,PPoutpath=os.getcwd(),folder=None):
         """
         Args:
             res (list) - list of gen_summary outputs [res1,res2,res3]
@@ -363,10 +366,10 @@ class yieldPlotHistograms(object):
             c = plt.gca()._get_lines.prop_cycler.next()['color']
             if plotmeans:
                 mn = np.mean(rcounts[j])
-                plot([mn]*2,[0,mx],'--',color=c)
+                plt.plot([mn]*2,[0,mx],'--',color=c)
                 if leg is not None:
                     leg += ' ($\\mu = %2.2f$)'%mn
-            plot(bcents, pdfs[j], syms[np.mod(j,len(syms))]+lstyle,color=c,label=leg)
+            plt.plot(bcents, pdfs[j], syms[np.mod(j,len(syms))]+lstyle,color=c,label=leg)
 
         plt.ylim([0,mx])
         if legtext[0] is not None:
