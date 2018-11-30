@@ -53,7 +53,7 @@ import copy
 import random
 import datetime
 import re
-from EXOSIMS.util import vprint
+from EXOSIMS.util.vprint import vprint
 
 class plotC0vsT0andCvsT(object):
     """Designed to plot Planned Completeness and Observed Completeness
@@ -99,22 +99,6 @@ class plotC0vsT0andCvsT(object):
             vprint('Failed to open outspecfile %s'%outspecPath)
             pass
 
-        #extract mission information from DRM
-        arrival_times = [DRM['DRM'][i]['arrival_time'].value for i in np.arange(len(DRM['DRM']))]
-        star_inds = [DRM['DRM'][i]['star_ind'] for i in np.arange(len(DRM['DRM']))]
-        sumOHTIME = outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime']
-        raw_det_time = [DRM['DRM'][i]['det_time'].value for i in np.arange(len(DRM['DRM']))]#DOES NOT INCLUDE overhead time
-        det_times = [DRM['DRM'][i]['det_time'].value+sumOHTIME for i in np.arange(len(DRM['DRM']))]#includes overhead time
-        det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1) for i in np.arange(len(DRM['DRM']))]
-        ObsNums = [DRM['DRM'][i]['ObsNum'] for i in np.arange(len(DRM['DRM']))]
-        y_vals = np.zeros(len(det_times)).tolist()
-        char_times = [DRM['DRM'][i]['char_time'].value*(1+outspec['charMargin'])+sumOHTIME for i in np.arange(len(DRM['DRM']))]
-        OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
-        #sumOHTIME = [1 for i in np.arange(len(DRM['DRM']))]
-        vprint(sum(det_times))
-        vprint(sum(char_times))
-
-
         #Create Simulation Object
         sim = EXOSIMS.MissionSim.MissionSim(scriptfile=None, nopar=True, **outspec)
         SS = sim.SurveySimulation
@@ -135,7 +119,7 @@ class plotC0vsT0andCvsT(object):
             timeConservationCheck = numObs0*(outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime'].value) + sum(initt0).value # This assumes a specific instrument for ohTime
             #assert abs(timeConservationCheck-outspec['missionLife']*outspec['missionPortion']*365.25) < 0.1, 'total instrument time not consistent with initial calculation'
             if not abs(timeConservationCheck-outspec['missionLife']*outspec['missionPortion']*365.25) < 0.1:
-                vprintt('total instrument time used is not within total allowed time with 0.1d')
+                vprint('total instrument time used is not within total allowed time with 0.1d')
             assert abs(timeConservationCheck-outspec['missionLife']*outspec['missionPortion']*365.25) < 0.5, 'total instrument time not consistent with initial calculation'
             #THIS IS JUST SUMCOMP initscomp0 = sim.SurveySimulation.scomp0
 
@@ -150,7 +134,7 @@ class plotC0vsT0andCvsT(object):
             sumComp0 = sum(comp0)
 
             #Plot t0 vs c0
-            fig.append(figure())
+            plt.figure()
             plt.rc('axes',linewidth=2)
             plt.rc('lines',linewidth=2)
             #rcParams['axes.linewidth']=2
@@ -165,6 +149,29 @@ class plotC0vsT0andCvsT(object):
             comp02 = COMP.comp_per_intTime(t0LT1us*u.d, TL, sIndsLT1us.tolist(), 
                     ZL.fZ0, ZL.fEZ0, SS.WAint[sIndsLT1us], SS.detmode, C_b=Cbs[sIndsLT1us], C_sp=Csps[sIndsLT1us])
 
+            #Overwrite DRM with DRM just calculated
+            res = sim.run_sim()
+            DRM['DRM'] = sim.SurveySimulation.DRM
+
+
+
+        #extract mission information from DRM
+        arrival_times = [DRM['DRM'][i]['arrival_time'].value for i in np.arange(len(DRM['DRM']))]
+        star_inds = [DRM['DRM'][i]['star_ind'] for i in np.arange(len(DRM['DRM']))]
+        sumOHTIME = outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime'].value
+        raw_det_time = [DRM['DRM'][i]['det_time'].value for i in np.arange(len(DRM['DRM']))]#DOES NOT INCLUDE overhead time
+        det_times = [DRM['DRM'][i]['det_time'].value+sumOHTIME for i in np.arange(len(DRM['DRM']))]#includes overhead time
+        det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1) for i in np.arange(len(DRM['DRM']))]
+        ObsNums = [DRM['DRM'][i]['ObsNum'] for i in np.arange(len(DRM['DRM']))]
+        y_vals = np.zeros(len(det_times)).tolist()
+        char_times = [DRM['DRM'][i]['char_time'].value*(1.+outspec['charMargin'])+sumOHTIME for i in np.arange(len(DRM['DRM']))]
+        OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
+        #sumOHTIME = [1 for i in np.arange(len(DRM['DRM']))]
+        vprint(sum(det_times))
+        vprint(sum(char_times))
+
+
+
         #calculate completeness at the time of each star observation
         slewTimes = np.zeros(len(star_inds))
         fZ = ZL.fZ(Obs, TL, star_inds, TK.missionStart + (arrival_times + slewTimes)*u.d, SS.detmode)
@@ -173,7 +180,8 @@ class plotC0vsT0andCvsT(object):
         sumComps = sum(comps)
 
 
-        plt.figure()
+        if not plt.get_fignums(): # there is no figure open
+            plt.figure()
         plt.rc('axes',linewidth=2)
         plt.rc('lines',linewidth=2)
         #rcParams['axes.linewidth']=2
@@ -201,7 +209,7 @@ class plotC0vsT0andCvsT(object):
         vprint(max(tmpdiff))
 
         vprint(-2.5*np.log10(ZL.fZ0.value)) # This is 23
-        vprint(-2.5*np.log10(mean(fZ).value))
+        vprint(-2.5*np.log10(np.mean(fZ).value))
 
 
 
