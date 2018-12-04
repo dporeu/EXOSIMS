@@ -71,12 +71,12 @@ class SLSQPScheduler(SurveySimulation):
 
         #some global defs
         self.detmode = filter(lambda mode: mode['detectionMode'] == True, self.OpticalSystem.observingModes)[0]
-        self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime']
-        self.maxTime = self.TimeKeeping.missionLife*self.TimeKeeping.missionPortion
+        self.ohTimeTot = self.Observatory.settlingTime + self.detmode['syst']['ohTime'] # total overhead time per observation
+        self.maxTime = self.TimeKeeping.missionLife*self.TimeKeeping.missionPortion # total mission time
 
         self.constraints = {'type':'ineq',
-                            'fun': lambda x: self.maxTime.to(u.d).value - np.sum(x[x*u.d > 0.1*u.s]) - 
-                                             np.sum(x*u.d > 0.1*u.s).astype(float)*self.ohTimeTot.to(u.d).value,
+                            'fun': lambda x: self.maxTime.to(u.d).value - np.sum(x[x*u.d > 0.1*u.s]) - #maxTime less sum of intTimes
+                                             np.sum(x*u.d > 0.1*u.s).astype(float)*self.ohTimeTot.to(u.d).value, # sum of True -> goes to 1 x OHTime
                             'jac':lambda x: np.ones(len(x))*-1.}
 
         self.t0 = None
@@ -94,51 +94,79 @@ class SLSQPScheduler(SurveySimulation):
 
 
         if self.t0 is None:
-            #find nominal background counts for all targets in list
+            #1. find nominal background counts for all targets in list
+            dMagint = 25.0 # this works fine for WFIRST
+            #self.dMagint = 24.0
+            self.vprint('dMagint: ' + str(self.dMagint))
+            self.vprint('WAint: ' + str(self.WAint))
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
-                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, 25.0, self.WAint, self.detmode)
-            Csps[Csps==0./u.s] = 10.**-15./u.s # patch to ensure no Csp values are 0. Noted that some got converted into 0 when all their components appear to be nonzero (specifically related to HabEx run)
+                    self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.WAint, self.detmode)
+            #2.
+            self.vprint('num Csps<0: ' + str(len(Csps[Csps<=0./u.s])))
+            Csps[Csps<=0./u.s] = 10.**15./u.s # patch to ensure any negative Csps are converted to positive
+            Csps[Csps==0./u.s] = 10.**15./u.s # patch to ensure no Csp values are 0. Noted that some got converted into 0 when all their components appear to be nonzero (specifically related to HabEx run)
+            #In the  inttimesfeps calculation of tstars, if Csps ==0 (or possibly approximately 0) t can be 0 which is a problem that could make the MIP degenerate
+            self.vprint('number 0 Csps corrected: ' + str(len(Csps[Csps.value==1e15])))
+            self.vprint('number negative Csps corrected: ' + str(len(Csps[Csps.value==1e15])))
 
             #find baseline solution with dMagLim-based integration times
             self.vprint('Finding baseline fixed-time optimal target set.')
+            #3.
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, range(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode)
+            self.vprint('Calculated t0')
+            #4.
             comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, range(self.TargetList.nStars), 
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cbs, C_sp=Csps)
-
             
-            solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
-            xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in range(len(comp0)) ]
+            #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
+            self.vprint('Instantiating Solver')
+            solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
+            xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in range(len(comp0)) ] # define x_i variables for each star either 0 or 1
+            self.vprint('Finding baseline fixed-time optimal target set.')
 
             #constraint is x_i*t_i < maxtime
-            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value)
+            constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value) #hmmm I wonder if we could set this to 0,maxTime
             for j,x in enumerate(xs):
-                constraint.SetCoefficient(x, t0[j].to(u.day).value + self.ohTimeTot.to(u.day).value)
+                constraint.SetCoefficient(x, t0[j].to(u.day).value + self.ohTimeTot.to(u.day).value) # this forms x_i*(t_0i+OH) for all i
+            self.vprint('Done defining constraint')
 
             #objective is max x_i*comp_i
             objective = solver.Objective()
             for j,x in enumerate(xs):
                 objective.SetCoefficient(x, comp0[j])
             objective.SetMaximization()
+            self.vprint('Done defining objective')
 
-            cpres = solver.Solve()
-            x0 = np.array([x.solution_value() for x in xs])
-            self.scomp0 = np.sum(comp0*x0)
-            self.t0 = t0
+            cpres = solver.Solve() # actually solve MIP
+            x0 = np.array([x.solution_value() for x in xs]) # convert output solutions
+
+            self.scomp0 = np.sum(comp0*x0) # calculate sum Comp from MIP
+            self.vprint('number x0 set to 0: ' + str(len(x0[x0==0.])))
+            self.t0 = t0 # assign calculated t0
+
+            #Observation num x0=0 @ dMagint=25 is 1501
+            #Observation num x0=0 @ dMagint=30 is 1501...
+            #### Finished Running MIP for quick initial solution
 
             #now find the optimal eps baseline and use whichever gives you the highest starting completeness
             self.vprint('Finding baseline fixed-eps optimal target set.')
             def totCompfeps(eps):
                 compstars,tstars,x = self.inttimesfeps(eps, Cbs.to('1/d').value, Csps.to('1/d').value)
                 return -np.sum(compstars*x)
-            epsres = minimize_scalar(totCompfeps,method='bounded',bounds = [0,1],options = {'disp':True})
+            #print(saltyburrito)
+            #Note: There is no way to seed an initial solution to minimize scalar 
+            #0 and 1 are supposed to be the bounds on epsres. I could define upper bound to be 0.01, However defining the bounds to be 5 lets the solver converge
+            epsres = minimize_scalar(totCompfeps,method='bounded',bounds=[0,5], options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter})  #adding ftol for initial seed. could be different ftol
+                #https://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-bounded.html#optimize-minimize-scalar-bounded
+            self.vprint('Calculating inttimesfeps')
             comp_epsmax,t_epsmax,x_epsmax = self.inttimesfeps(epsres['x'],Cbs.to('1/d').value, Csps.to('1/d').value)
             if np.sum(comp_epsmax*x_epsmax) > self.scomp0:
                 x0 = x_epsmax
                 self.scomp0 = np.sum(comp_epsmax*x_epsmax) 
                 self.t0 = t_epsmax*u.day
 
-            #now optimize the solution
+            ##### Optimize the baseline solution
             self.vprint('Optimizing baseline integration times.')
             sInds = np.arange(self.TargetList.nStars)
             if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
@@ -149,10 +177,30 @@ class SLSQPScheduler(SurveySimulation):
                 fZ = self.valfZmax
             elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, self.TimeKeeping.currentTimeAbs.copy()+np.zeros(self.TargetList.nStars)*u.d, self.detmode)
-            bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))]
+
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = self.TimeKeeping.get_ObsDetectionMaxIntTime(self.Observatory, self.detmode, self.TimeKeeping.currentTimeNorm.copy())
+            maxIntTime   = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
+            bounds = [(0,maxIntTime.to(u.d).value) for i in range(len(sInds))]
+            #bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))] # original method of defining bounds
             initguess = x0*self.t0.to(u.d).value
+            self.save_initguess
+            self.vprint('x0')
+            self.vprint(x0)
+            self.vprint(len(x0[x0==1.]))
+            #self.vprint([i for i.value in x0 if np.isinf(i)])
+            #self.vprint([i for i in x0 if np.isnan(i)])
+            #self.vprint([i for i in x0 if np.isinf(i)])
+            self.vprint('t0')
+            self.vprint(self.t0)
+            self.vprint([i for i in self.t0.value if np.isnan(i)])
+            self.vprint([i for i in self.t0.value if np.isinf(i)])
+            self.vprint([i for i in self.t0.value if i<0.])
+            self.vprint([i for i in self.t0.value if i==0.])
+            self.vprint('initguess: ' + str(initguess))
+            #I specify ftol to be .5% of the scomp0 NEED TO IMPROVE THIS
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
-                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':self.maxiter,'ftol':self.ftol})
+                    constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':self.maxiter, 'ftol':self.ftol, 'disp': True}) #original method
+            #tol=self.scomp0*0.0001,
 
             assert ires['success'], "Initial time optimization failed."
 
@@ -174,7 +222,13 @@ class SLSQPScheduler(SurveySimulation):
         """
 
         tstars = (-Cb*eps*np.sqrt(np.log(10.)) + np.sqrt((Cb*eps)**2.*np.log(10.) + 
-                   5.*Cb*Csp**2.*eps))/(2.0*Csp**2.*eps*np.log(10.))
+                   5.*Cb*Csp**2.*eps))/(2.0*Csp**2.*eps*np.log(10.)) # calculating Tau to achieve dC/dT #double check
+        if len(tstars[tstars<= 0.]) >= 1.:
+            self.vprint('At least 1 tstar leq 0')
+            print saltyburrito
+        tstars[tstars <= 0.] = self.maxTime.to(u.d).value # Setting to maxTime so cost of x being 1 is very high #NOT HOW THIS WORKS need to set to zero because some stars are returning negative
+        #tstars[self.t0 == 0.] = self.maxTime.to(u.d).value # Setting to maxTime so cost of x being 1 is very high #added later to ensure previously filtered stars
+        
         compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList, 
                 np.arange(self.TargetList.nStars), self.ZodiacalLight.fZ0, 
                 self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cb/u.d, C_sp=Csp/u.d)
@@ -196,6 +250,7 @@ class SLSQPScheduler(SurveySimulation):
 
         x = np.array([x.solution_value() for x in xs])
 
+
         return compstars,tstars,x
 
 
@@ -213,11 +268,11 @@ class SLSQPScheduler(SurveySimulation):
                 Same size as t
 
         """
-        good = t*u.d >= 0.1*u.s
+        good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         comp = self.Completeness.comp_per_intTime(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode)
-
+        self.vprint(-comp.sum())
         return -comp.sum()
 
 
@@ -235,7 +290,7 @@ class SLSQPScheduler(SurveySimulation):
                 Same size as t
 
         """
-        good = t*u.d >= 0.1*u.s
+        good = t*u.d >= 0.1*u.s # inds that were not downselected by initial MIP
 
         tmp = self.Completeness.dcomp_dt(t[good]*u.d, self.TargetList, sInds[good], fZ[good], 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds][good], self.detmode).to("1/d").value
@@ -283,8 +338,6 @@ class SLSQPScheduler(SurveySimulation):
                 fZ = self.valfZmax
             elif self.Izod == 'current': # Use current fZ to calculate integration times
                 fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds, startTimes, mode)
-
-
 
             #### instead of actual time left, try bounding by maxTime - detection time used
             #need to update time used in choose_next_target
@@ -339,9 +392,9 @@ class SLSQPScheduler(SurveySimulation):
         if self.Izod == 'fZ0': # Use fZ0 to calculate integration times
             fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
         elif self.Izod == 'fZmin': # Use fZmin to calculate integration times
-            fZ = self.valfZmin
+            fZ = self.valfZmin[sInds]
         elif self.Izod == 'fZmax': # Use fZmax to calculate integration times
-            fZ = self.valfZmax
+            fZ = self.valfZmax[sInds]
         elif self.Izod == 'current': # Use current fZ to calculate integration times
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
                 self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
