@@ -188,7 +188,7 @@ class Nemati(OpticalSystem):
         assert len(fZ) == len(sInds), "fZ must be an array of length len(sInds)"
         assert len(WA) == len(sInds), "WA must be an array of length len(sInds)"
         
-        dMagLim = np.zeros(len(sInds)) + 25
+        dMagLim = np.zeros(len(sInds)) + 25.
         if (C_b is None) or (C_sp is None):
             _, C_b, C_sp = self.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dMagLim, WA, mode)
         ddMagdt = 2.5/(2.0*np.log(10.0))*(C_b/(C_b*intTimes + (C_sp*intTimes)**2.)).to('1/s').value
