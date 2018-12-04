@@ -157,7 +157,7 @@ class SLSQPScheduler(SurveySimulation):
             #print(saltyburrito)
             #Note: There is no way to seed an initial solution to minimize scalar 
             #0 and 1 are supposed to be the bounds on epsres. I could define upper bound to be 0.01, However defining the bounds to be 5 lets the solver converge
-            epsres = minimize_scalar(totCompfeps,method='bounded',bounds=[0,5], options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter})  #adding ftol for initial seed. could be different ftol
+            epsres = minimize_scalar(totCompfeps,method='bounded',bounds=[0,7], options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter})  #adding ftol for initial seed. could be different ftol
                 #https://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-bounded.html#optimize-minimize-scalar-bounded
             self.vprint('Calculating inttimesfeps')
             comp_epsmax,t_epsmax,x_epsmax = self.inttimesfeps(epsres['x'],Cbs.to('1/d').value, Csps.to('1/d').value)
@@ -183,7 +183,7 @@ class SLSQPScheduler(SurveySimulation):
             bounds = [(0,maxIntTime.to(u.d).value) for i in range(len(sInds))]
             #bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))] # original method of defining bounds
             initguess = x0*self.t0.to(u.d).value
-            self.save_initguess
+            self.save_initguess = initguess
             self.vprint('x0')
             self.vprint(x0)
             self.vprint(len(x0[x0==1.]))
