@@ -410,6 +410,7 @@ class TargetList(object):
             * Systems with planets inside the OpticalSystem fundamental IWA
             * Systems where minimum integration time is longer than OpticalSystem cutoff
             * Systems not meeting the Completeness threshold
+            * Systems with Visual Magnitude less than 0
         
         Additional filters can be provided in specific TargetList implementations.
         
@@ -434,6 +435,11 @@ class TargetList(object):
         self.completeness_filter()
         if self.explainFiltering:
             print("%d targets remain after completeness filter."%self.nStars)
+
+        # filter out systems which do not reach the completeness threshold
+        self.vis_mag_filter(0.)
+        if self.explainFiltering:
+            print("%d targets remain after Visual Magnitude filter."%self.nStars)
 
     def nan_filter(self):
         """Populates Target List and filters out values which are nan
