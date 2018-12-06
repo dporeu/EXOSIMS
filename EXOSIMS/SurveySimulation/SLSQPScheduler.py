@@ -8,6 +8,7 @@ try:
    import cPickle as pickle
 except:
    import pickle
+from astropy.time import Time
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
