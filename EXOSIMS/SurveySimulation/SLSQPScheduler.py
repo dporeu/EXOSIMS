@@ -30,7 +30,7 @@ class SLSQPScheduler(SurveySimulation):
     """
 
     def __init__(self, cacheOptTimes=False, staticOptTimes=False, selectionMetric='maxC', Izod='current',
-        maxiter=100, ftol=1e-4, **specs): #fZminObs=False,
+        maxiter=30, ftol=1e-3, **specs): #fZminObs=False,
         
         #initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
@@ -102,6 +102,8 @@ class SLSQPScheduler(SurveySimulation):
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.WAint, self.detmode)
             #2.
+            if len(Csps[Csps<=0./u.s]) > 0:
+                print saltyburrito
             self.vprint('num Csps<0: ' + str(len(Csps[Csps<=0./u.s])))
             Csps[Csps<=0./u.s] = 10.**15./u.s # patch to ensure any negative Csps are converted to positive
             Csps[Csps==0./u.s] = 10.**15./u.s # patch to ensure no Csp values are 0. Noted that some got converted into 0 when all their components appear to be nonzero (specifically related to HabEx run)
@@ -138,6 +140,8 @@ class SLSQPScheduler(SurveySimulation):
             objective.SetMaximization()
             self.vprint('Done defining objective')
 
+            solver.EnableOutput()
+            solver.SetTimeLimit(5*60*1000)#time limit for solver in milliseconds
             cpres = solver.Solve() # actually solve MIP
             x0 = np.array([x.solution_value() for x in xs]) # convert output solutions
 
@@ -149,10 +153,12 @@ class SLSQPScheduler(SurveySimulation):
             #Observation num x0=0 @ dMagint=30 is 1501...
             #### Finished Running MIP for quick initial solution
 
+
             #now find the optimal eps baseline and use whichever gives you the highest starting completeness
             self.vprint('Finding baseline fixed-eps optimal target set.')
             def totCompfeps(eps):
                 compstars,tstars,x = self.inttimesfeps(eps, Cbs.to('1/d').value, Csps.to('1/d').value)
+                self.vprint('totCompfeps: ' + str(len(x[x==0.])))
                 return -np.sum(compstars*x)
             #print(saltyburrito)
             #Note: There is no way to seed an initial solution to minimize scalar 
@@ -223,10 +229,10 @@ class SLSQPScheduler(SurveySimulation):
 
         tstars = (-Cb*eps*np.sqrt(np.log(10.)) + np.sqrt((Cb*eps)**2.*np.log(10.) + 
                    5.*Cb*Csp**2.*eps))/(2.0*Csp**2.*eps*np.log(10.)) # calculating Tau to achieve dC/dT #double check
-        if len(tstars[tstars<= 0.]) >= 1.:
-            self.vprint('At least 1 tstar leq 0')
-            print saltyburrito
-        tstars[tstars <= 0.] = self.maxTime.to(u.d).value # Setting to maxTime so cost of x being 1 is very high #NOT HOW THIS WORKS need to set to zero because some stars are returning negative
+        #if len(tstars[tstars<= 0.]) >= 1.:
+        #    self.vprint('At least 1 tstar leq 0')
+        #    print saltyburrito
+        #tstars[tstars <= 0.] = self.maxTime.to(u.d).value # Setting to maxTime so cost of x being 1 is very high #NOT HOW THIS WORKS need to set to zero because some stars are returning negative
         #tstars[self.t0 == 0.] = self.maxTime.to(u.d).value # Setting to maxTime so cost of x being 1 is very high #added later to ensure previously filtered stars
         
         compstars = self.Completeness.comp_per_intTime(tstars*u.day, self.TargetList, 
@@ -245,6 +251,9 @@ class SLSQPScheduler(SurveySimulation):
         for j,x in enumerate(xs):
             objective.SetCoefficient(x, compstars[j])
         objective.SetMaximization()
+        solver.EnableOutput()
+        solver.SetTimeLimit(5*60*1000)#time limit for solver in milliseconds
+
 
         cpres = solver.Solve()
 

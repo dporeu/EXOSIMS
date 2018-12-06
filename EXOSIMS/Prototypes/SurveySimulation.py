@@ -272,9 +272,9 @@ class SurveySimulation(object):
 
                 EEID = ((np.sqrt(Lstar)*u.AU/TL.dist[i]).decompose()*u.rad).to(u.arcsec)
                 if EEID < mode['IWA']:
-                    EEID = mode['IWA']
+                    EEID = mode['IWA']*(1.+1e-14)
                 elif EEID > mode['OWA']:
-                    EEID = mode['OWA']
+                    EEID = mode['OWA']*(1.-1e-14)
 
                 self.WAint[i] = EEID
         self._outspec['scaleWAdMag'] = scaleWAdMag 

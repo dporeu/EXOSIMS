@@ -436,10 +436,10 @@ class TargetList(object):
         if self.explainFiltering:
             print("%d targets remain after completeness filter."%self.nStars)
 
-        # filter out systems which do not reach the completeness threshold
-        self.vis_mag_filter(0.)
-        if self.explainFiltering:
-            print("%d targets remain after Visual Magnitude filter."%self.nStars)
+        # # filter out systems which do not reach the completeness threshold
+        # self.vis_mag_filter(Vmagmincrit=0.)
+        # if self.explainFiltering:
+        #     print("%d targets remain after Visual Magnitude filter."%self.nStars)
 
     def nan_filter(self):
         """Populates Target List and filters out values which are nan
@@ -527,10 +527,12 @@ class TargetList(object):
         i = np.unique(i)
         self.revise_lists(i)
 
-    def vis_mag_filter(self, Vmagcrit):
+    def vis_mag_filter(self, Vmagcrit=np.inf):# Vmagmincrit=0.,
         """Includes stars which are below the maximum apparent visual magnitude
         
         Args:
+            Vmagmincrit (float):
+                minimum required visual magnitude
             Vmagcrit (float):
                 maximum apparent visual magnitude
         
@@ -538,6 +540,8 @@ class TargetList(object):
         
         i = np.where(self.Vmag < Vmagcrit)[0]
         self.revise_lists(i)
+        # i = np.where(self.Vmag > Vmagmincrit)[0]
+        # self.revise_lists(i)
 
     def outside_IWA_filter(self):
         """Includes stars with planets with orbits outside of the IWA 
