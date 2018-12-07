@@ -97,7 +97,6 @@ class SLSQPScheduler(SurveySimulation):
         if self.t0 is None:
             #1. find nominal background counts for all targets in list
             dMagint = 25.0 # this works fine for WFIRST
-            #self.dMagint = 24.0
             self.vprint('dMagint: ' + str(self.dMagint))
             self.vprint('WAint: ' + str(self.WAint))
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
@@ -141,7 +140,7 @@ class SLSQPScheduler(SurveySimulation):
             objective.SetMaximization()
             self.vprint('Done defining objective')
 
-            solver.EnableOutput()
+            #solver.EnableOutput()# this line enables output of the CBC MIXED INTEGER PROGRAM (Was hard to find don't delete)
             solver.SetTimeLimit(5*60*1000)#time limit for solver in milliseconds
             cpres = solver.Solve() # actually solve MIP
             x0 = np.array([x.solution_value() for x in xs]) # convert output solutions
@@ -252,7 +251,7 @@ class SLSQPScheduler(SurveySimulation):
         for j,x in enumerate(xs):
             objective.SetCoefficient(x, compstars[j])
         objective.SetMaximization()
-        solver.EnableOutput()
+        #solver.EnableOutput() # this line enables output of the CBC MIXED INTEGER PROGRAM (Was hard to find don't delete)
         solver.SetTimeLimit(5*60*1000)#time limit for solver in milliseconds
 
 
@@ -391,6 +390,7 @@ class SLSQPScheduler(SurveySimulation):
                 the amount of time to wait (this method returns None)
         
         """
+        self.vprint(len(sInds))
         #Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
         tmpsInds = sInds
         sInds = sInds[np.where(intTimes.value > 1e-15)]#filter out any intTimes that are essentially 0
@@ -441,22 +441,22 @@ class SLSQPScheduler(SurveySimulation):
             valfZmax = self.valfZmax[sInds].copy()
             valfZmin = self.valfZmin[sInds].copy()
             TK = self.TimeKeeping
-            COPYabsTimefZmin = self.absTimefZmin.value
-
+            COPYabsTimefZmin = self.absTimefZmin.copy().value
             #Time relative to now where fZmin occurs
-            timeWherefZminOccursRelativeToNow = COPYabsTimefZmin - TK.currentTimeAbs.value #of all targetss
+            timeWherefZminOccursRelativeToNow = COPYabsTimefZmin - TK.currentTimeAbs.copy().value #of all targets
             zero = 0#TK.missionStart-TK.missionStart#hack to create a zero astropy time object
             indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0] # find all inds that are less than 0
             cnt = 0.
             while len(indsLessThan0) > 0: #iterate until we know the next time in the future where fZmin occurs for all targets
                 cnt += 1.
-                timeWherefZminOccursRelativeToNow[indsLessThan0] = COPYabsTimefZmin[indsLessThan0] - TK.currentTimeAbs.value + cnt*365.25 #take original and add 365.25 until we get the right number of years to add
+                timeWherefZminOccursRelativeToNow[indsLessThan0] = COPYabsTimefZmin[indsLessThan0] - TK.currentTimeAbs.copy().value + cnt*365.25 #take original and add 365.25 until we get the right number of years to add
                 indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0]
             timeToStartfZmins = timeWherefZminOccursRelativeToNow#contains all "next occuring" fZmins in absolute time
 
             absTimefZminAfterNow = [timeToStartfZmins[i] for i in range(len(timeToStartfZmins)) if timeToStartfZmins[i] > 0. and i in sInds]#filter by times in future and times not filtered
-
             nextAbsTime = min(np.asarray(absTimefZminAfterNow))#find the minimum time
+            self.vprint(len(timeToStartfZmins))
+            self.vprint(len(sInds))
             sInd = np.where((timeToStartfZmins == nextAbsTime))[0][0]#find the index of the minimum time and return that sInd
             del absTimefZminAfterNow
 
@@ -483,9 +483,9 @@ class SLSQPScheduler(SurveySimulation):
         #else:
 
 
-
-        if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
-            sInd = None
+        if not sInd == None:
+            if self.t0[sInd] < 1.0*u.s: # We assume any observation with integration time of less than 1 second is not a valid integration time
+                sInd = None
         
         return sInd, None
 
