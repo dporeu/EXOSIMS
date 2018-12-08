@@ -101,15 +101,6 @@ class SLSQPScheduler(SurveySimulation):
             self.vprint('WAint: ' + str(self.WAint))
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.WAint, self.detmode)
-            #2.
-            if len(Csps[Csps<=0./u.s]) > 0:
-                print saltyburrito
-            self.vprint('num Csps<0: ' + str(len(Csps[Csps<=0./u.s])))
-            Csps[Csps<=0./u.s] = 10.**15./u.s # patch to ensure any negative Csps are converted to positive
-            Csps[Csps==0./u.s] = 10.**15./u.s # patch to ensure no Csp values are 0. Noted that some got converted into 0 when all their components appear to be nonzero (specifically related to HabEx run)
-            #In the  inttimesfeps calculation of tstars, if Csps ==0 (or possibly approximately 0) t can be 0 which is a problem that could make the MIP degenerate
-            self.vprint('number 0 Csps corrected: ' + str(len(Csps[Csps.value==1e15])))
-            self.vprint('number negative Csps corrected: ' + str(len(Csps[Csps.value==1e15])))
 
             #find baseline solution with dMagLim-based integration times
             self.vprint('Finding baseline fixed-time optimal target set.')
@@ -153,12 +144,11 @@ class SLSQPScheduler(SurveySimulation):
             #Observation num x0=0 @ dMagint=30 is 1501...
             #### Finished Running MIP for quick initial solution
 
-
             #now find the optimal eps baseline and use whichever gives you the highest starting completeness
             self.vprint('Finding baseline fixed-eps optimal target set.')
             def totCompfeps(eps):
                 compstars,tstars,x = self.inttimesfeps(eps, Cbs.to('1/d').value, Csps.to('1/d').value)
-                self.vprint('totCompfeps: ' + str(len(x[x==0.])))
+                self.vprint('totCompfeps: ' + str(len(x[x==0.])) + ' len tstars: ' + str(len(tstars[tstars>1e-10])))
                 return -np.sum(compstars*x)
             #print(saltyburrito)
             #Note: There is no way to seed an initial solution to minimize scalar 
@@ -170,7 +160,7 @@ class SLSQPScheduler(SurveySimulation):
             if np.sum(comp_epsmax*x_epsmax) > self.scomp0:
                 x0 = x_epsmax
                 self.scomp0 = np.sum(comp_epsmax*x_epsmax) 
-                self.t0 = t_epsmax*u.day
+                self.t0 = t_epsmax*x_epsmax*u.day
 
             ##### Optimize the baseline solution
             self.vprint('Optimizing baseline integration times.')
@@ -218,6 +208,9 @@ class SLSQPScheduler(SurveySimulation):
                     pickle.dump(self.t0, f)
                 self.vprint("Saved cached optimized t0 to %s"%cachefname)
 
+        #Redefine filter inds
+        self.intTimeFilterInds = np.where((self.t0 > 0)*(self.t0 <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating    
+
 
     def inttimesfeps(self,eps,Cb,Csp):
         """
@@ -256,9 +249,17 @@ class SLSQPScheduler(SurveySimulation):
 
 
         cpres = solver.Solve()
+        #self.vprint(solver.result_status())
+
 
         x = np.array([x.solution_value() for x in xs])
+        self.vprint('Solver is FEASIBLE: ' + str(solver.FEASIBLE))
+        self.vprint('Solver is OPTIMAL: ' + str(solver.OPTIMAL))
+        self.vprint('Solver is BASIC: ' + str(solver.BASIC))
+        #self.vprint('Solver is iterations: ' + str(solver.iterations))
+        #self.vprint('Solver is nodes: ' + str(solver.nodes))
 
+        #solver.reset()
 
         return compstars,tstars,x
 
@@ -390,11 +391,14 @@ class SLSQPScheduler(SurveySimulation):
                 the amount of time to wait (this method returns None)
         
         """
-        self.vprint(len(sInds))
         #Do Checking to Ensure There are Targetswith Positive Nonzero Integration Time
         tmpsInds = sInds
-        sInds = sInds[np.where(intTimes.value > 1e-15)]#filter out any intTimes that are essentially 0
+        sInds = sInds[np.where(intTimes.value > 1e-10)]#filter out any intTimes that are essentially 0
+        intTimes = intTimes[intTimes.value > 1e-10]
+        #self.vprint(len(sInds))
         if len(sInds) == 0:#If there are no stars... arbitrarily assign 1 day for observation length otherwise this time would be wasted
+            return None, None
+            self.vprint('len sInds is 0')
             sInds = tmpsInds #revert to the saved sInds
             intTimes = (np.zeros(len(sInds)) + 1.)*u.d  
 
@@ -408,7 +412,7 @@ class SLSQPScheduler(SurveySimulation):
         elif self.Izod == 'current': # Use current fZ to calculate integration times
             fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
                 self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
-        comps = self.Completeness.comp_per_intTime(intTimes[np.where(intTimes.value > 1e-15)], self.TargetList, sInds, fZ, 
+        comps = self.Completeness.comp_per_intTime(intTimes, self.TargetList, sInds, fZ, 
                 self.ZodiacalLight.fEZ0, self.WAint[sInds], self.detmode)
 
         #### Selection Metric Type
@@ -433,7 +437,7 @@ class SLSQPScheduler(SurveySimulation):
         #     selectInd = np.argmin((fZ - valfZmin)/(valfZmin - valfZmax)*(1./comps))
         #     sInd = sInds[selectInd]
         elif self.selectionMetric == 'TauIzod/CIzod': #G maximum C/T
-            selectInd = np.argmin(intTimes[np.where(intTimes.value > 1e-15)]/comps)
+            selectInd = np.argmin(intTimes/comps)
             sInd = sInds[selectInd]
         elif self.selectionMetric == 'random': #I random selection of available
             sInd = np.random.choice(sInds)
@@ -442,9 +446,10 @@ class SLSQPScheduler(SurveySimulation):
             valfZmin = self.valfZmin[sInds].copy()
             TK = self.TimeKeeping
             COPYabsTimefZmin = self.absTimefZmin.copy().value
+
             #Time relative to now where fZmin occurs
             timeWherefZminOccursRelativeToNow = COPYabsTimefZmin - TK.currentTimeAbs.copy().value #of all targets
-            zero = 0#TK.missionStart-TK.missionStart#hack to create a zero astropy time object
+            zero = 0
             indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0] # find all inds that are less than 0
             cnt = 0.
             while len(indsLessThan0) > 0: #iterate until we know the next time in the future where fZmin occurs for all targets
@@ -455,14 +460,19 @@ class SLSQPScheduler(SurveySimulation):
 
             absTimefZminAfterNow = [timeToStartfZmins[i] for i in range(len(timeToStartfZmins)) if timeToStartfZmins[i] > 0. and i in sInds]#filter by times in future and times not filtered
             nextAbsTime = min(np.asarray(absTimefZminAfterNow))#find the minimum time
-            self.vprint(len(timeToStartfZmins))
-            self.vprint(len(sInds))
+            #self.vprint(len(timeToStartfZmins))
+            #self.vprint(len(sInds))
             sInd = np.where((timeToStartfZmins == nextAbsTime))[0][0]#find the index of the minimum time and return that sInd
             del absTimefZminAfterNow
 
             #Advance To fZmin of Target
             success = self.TimeKeeping.advanceToAbsTime(Time(nextAbsTime+TK.currentTimeAbs.copy().value, format='mjd', scale='tai'), False)
+            #DELETE self.vprint(success)
+            #self.vprint('advancedToAbsTime: ' + str(TK.currentTimeAbs.copy()))
             waitTime = None
+
+            selectInd = np.argmin(fZ - valfZmax)#this is most negative when fZ is smallest 
+            sInd = sInds[selectInd]
 
             #Check if exoplanetObsTime would be exceeded
             OS = self.OpticalSystem
@@ -476,11 +486,14 @@ class SLSQPScheduler(SurveySimulation):
             maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
             intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
             if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+                self.vprint('max allowed integration time would be exceeded')
                 sInd = None
                 waitTime = 1.*u.d
         #H is simply G but where comp and intTime are calculated using fZmin
         #elif self.selectionMetric == 'TauIzodmin/CIzodmin': #H maximum C at fZmin / T at fZmin
         #else:
+        # if self.t0[sInd].value == 0:
+        #     print saltyburrito
 
 
         if not sInd == None:
