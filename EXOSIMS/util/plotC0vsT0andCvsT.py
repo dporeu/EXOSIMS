@@ -39,8 +39,9 @@ except:
     import pickle
 import os
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt 
-    use('Agg')
 else:
     import matplotlib.pyplot as plt 
 import numpy as np

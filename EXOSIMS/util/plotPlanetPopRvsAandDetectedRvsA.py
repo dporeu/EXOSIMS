@@ -28,8 +28,9 @@ import numpy as np
 #from pylab import *
 from numpy import nan
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt 
-    use('Agg')
 else:
     import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
