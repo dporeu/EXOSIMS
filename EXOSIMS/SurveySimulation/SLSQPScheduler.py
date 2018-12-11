@@ -502,3 +502,14 @@ class SLSQPScheduler(SurveySimulation):
         
         return sInd, None
 
+    def arbitrary_time_advancement(self,dt):
+        """ Handles fully dynamically scheduled case where OBduration is infinite and
+        missionPortion is less than 1.
+        Input dt is the total amount of time, including all overheads and extras
+        used for the previous observation.
+        """
+        if self.selectionMetric == 'priorityObs':
+            pass
+        else:
+            self.TimeKeeping.allocate_time( dt*(1 - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
+                addExoplanetObsTime=False )
