@@ -36,7 +36,7 @@ class yieldPlotHistograms(object):
         """
         res = gen_summary(folder)
         self.res = res
-        self.dist_plot([res['detected']],PPoutpath=PPoutpath,folder=folder)
+        self.dist_plot([res['detected']],PPoutpath=PPoutpath,folder=folder,legtext='')
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Generates a yield histograms for the provided run_types
@@ -63,6 +63,11 @@ class yieldPlotHistograms(object):
             PPoutpath (string) -
             folder (string) - name of folder containing runs used to generate this plot (used for naming only)
         """
+        #Set linewidth and color cycle
+        plt.rc('axes',linewidth=2)
+        plt.rc('lines',linewidth=2)
+        plt.rc('axes',prop_cycle=(cycler('color',['red','purple','blue','black','darkorange','forestgreen'])))
+
         rcounts = []
         for el in res:
             if uniq:
@@ -89,11 +94,6 @@ class yieldPlotHistograms(object):
 
         if legtext is None:
             legtext = [None]*len(res)
-
-        #Set linewidth and color cycle
-        plt.rc('axes',linewidth=2)
-        plt.rc('lines',linewidth=2)
-        plt.rc('axes',prop_cycle=(cycler('color',['red','purple','blue','black','darkorange','forestgreen'])))
 
         for j in range(len(res)):
             leg = legtext[j]
