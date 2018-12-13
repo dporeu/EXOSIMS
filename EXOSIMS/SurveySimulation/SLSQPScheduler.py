@@ -513,3 +513,5 @@ class SLSQPScheduler(SurveySimulation):
         else:
             self.TimeKeeping.allocate_time( dt*(1 - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
                 addExoplanetObsTime=False )
+
+
