@@ -31,7 +31,7 @@ class SLSQPScheduler(SurveySimulation):
     """
 
     def __init__(self, cacheOptTimes=False, staticOptTimes=False, selectionMetric='maxC', Izod='current',
-        maxiter=30, ftol=1e-3, **specs): #fZminObs=False,
+        maxiter=60, ftol=1e-3, **specs): #fZminObs=False,
         
         #initialize the prototype survey
         SurveySimulation.__init__(self, **specs)
