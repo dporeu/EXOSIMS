@@ -535,13 +535,6 @@ class SurveySimulation(object):
                 a strategically advantageous amount of time to wait in the case of an occulter for slew times
         
         """
-        self.vprint('Time at top of next_target: ' + str(self.TimeKeeping.currentTimeNorm))
-        # try:
-        #     if len(self.DRM > 1):
-        #         self.DRM[-2]
-        # except:
-        #     pass
-
         OS = self.OpticalSystem
         ZL = self.ZodiacalLight
         Comp = self.Completeness
