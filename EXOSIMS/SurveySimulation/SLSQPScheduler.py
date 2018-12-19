@@ -55,13 +55,16 @@ class SLSQPScheduler(SurveySimulation):
             'random',
             'priorityObs'], 'selectionMetric not valid input' # Informs what selection metric to use
         self.selectionMetric = selectionMetric
+        self._outspec['selectionMetric'] = self.selectionMetric
 
         assert Izod in ['fZmin','fZ0','fZmax','current'], 'Izod not valid input' # Informs what Izod to optimize integration times for [fZmin, fZmin+45d, fZ0, fZmax, current]
         self.Izod = Izod
+        self._outspec['Izod'] = self.Izod
 
         assert isinstance(maxiter, int), 'maxiter is not an int' # maximum number of iterations to optimize integration times for
         assert maxiter >= 1, 'maxiter must be positive real'
         self.maxiter = maxiter
+        self._outspec['maxiter'] = self.maxiter
 
         # assert isinstance(fZminObs, bool), 'fZminObs must be boolean' # True means Observations will occur at fZmin of targets
         # self.fZminObs = fZminObs
@@ -69,6 +72,7 @@ class SLSQPScheduler(SurveySimulation):
         assert isinstance(ftol, float), 'ftol must be boolean' # tolerance to place on optimization
         assert ftol > 0, 'ftol must be positive real'
         self.ftol = ftol
+        self._outspec['ftol'] = self.ftol
 
 
         #some global defs
@@ -464,12 +468,12 @@ class SLSQPScheduler(SurveySimulation):
             #self.vprint(len(sInds))
             sInd = np.where((timeToStartfZmins == timeToAdvance))[0][0]#find the index of the minimum time and return that sInd
             del timefZminAfterNow
-            if len(self.DRM) > 0:
-                print 'prev Arr: ' + str(self.DRM[-1]['arrival_time'].value) + ' prev DetTime' + str(self.DRM[-1]['det_time'].value)
+            #if len(self.DRM) > 0:
+            #    print 'prev Arr: ' + str(self.DRM[-1]['arrival_time'].value) + ' prev DetTime' + str(self.DRM[-1]['det_time'].value)
             #pdb.set_trace()
             #Advance To fZmin of Target
             success = self.TimeKeeping.advanceToAbsTime(Time(timeToAdvance+TK.currentTimeAbs.copy().value, format='mjd', scale='tai'), False)
-            print 'advc: ' + str(np.round(timeToAdvance,2)) + '  '
+            #print 'advc: ' + str(np.round(timeToAdvance,2)) + '  '
             #DELETE self.vprint(success)
             #self.vprint('advancedToAbsTime: ' + str(TK.currentTimeAbs.copy()))
             waitTime = None
