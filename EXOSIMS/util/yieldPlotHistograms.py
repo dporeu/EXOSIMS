@@ -37,7 +37,7 @@ class yieldPlotHistograms(object):
         """
         res = gen_summary(folder)
         self.res = res
-        self.dist_plot([res['detected']],PPoutpath=PPoutpath,folder=folder,legtext='')
+        self.dist_plot([res['detected']],PPoutpath=PPoutpath,folder=folder,legtext=[''])
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Generates a yield histograms for the provided run_types
