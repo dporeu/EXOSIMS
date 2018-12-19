@@ -9,6 +9,7 @@ try:
 except:
    import pickle
 from astropy.time import Time
+import pdb
 
 class SLSQPScheduler(SurveySimulation):
     """SLSQPScheduler
@@ -103,17 +104,17 @@ class SLSQPScheduler(SurveySimulation):
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.WAint, self.detmode)
 
             #find baseline solution with dMagLim-based integration times
-            self.vprint('Finding baseline fixed-time optimal target set.')
+            #DELETE self.vprint('Finding baseline fixed-time optimal target set.')
             #3.
             t0 = self.OpticalSystem.calc_intTime(self.TargetList, range(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode)
-            self.vprint('Calculated t0')
+            #DELETE self.vprint('Calculated t0')
             #4.
             comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, range(self.TargetList.nStars), 
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cbs, C_sp=Csps)
             
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
-            self.vprint('Instantiating Solver')
+            #DELETE self.vprint('Instantiating Solver')
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
             xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in range(len(comp0)) ] # define x_i variables for each star either 0 or 1
             self.vprint('Finding baseline fixed-time optimal target set.')
@@ -122,14 +123,14 @@ class SLSQPScheduler(SurveySimulation):
             constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value) #hmmm I wonder if we could set this to 0,maxTime
             for j,x in enumerate(xs):
                 constraint.SetCoefficient(x, t0[j].to(u.day).value + self.ohTimeTot.to(u.day).value) # this forms x_i*(t_0i+OH) for all i
-            self.vprint('Done defining constraint')
+            #DELETE self.vprint('Done defining constraint')
 
             #objective is max x_i*comp_i
             objective = solver.Objective()
             for j,x in enumerate(xs):
                 objective.SetCoefficient(x, comp0[j])
             objective.SetMaximization()
-            self.vprint('Done defining objective')
+            #DELETE self.vprint('Done defining objective')
 
             #solver.EnableOutput()# this line enables output of the CBC MIXED INTEGER PROGRAM (Was hard to find don't delete)
             solver.SetTimeLimit(5*60*1000)#time limit for solver in milliseconds
@@ -137,7 +138,7 @@ class SLSQPScheduler(SurveySimulation):
             x0 = np.array([x.solution_value() for x in xs]) # convert output solutions
 
             self.scomp0 = np.sum(comp0*x0) # calculate sum Comp from MIP
-            self.vprint('number x0 set to 0: ' + str(len(x0[x0==0.])))
+            #DELETE self.vprint('number x0 set to 0: ' + str(len(x0[x0==0.])))
             self.t0 = t0 # assign calculated t0
 
             #Observation num x0=0 @ dMagint=25 is 1501
@@ -155,7 +156,7 @@ class SLSQPScheduler(SurveySimulation):
             #0 and 1 are supposed to be the bounds on epsres. I could define upper bound to be 0.01, However defining the bounds to be 5 lets the solver converge
             epsres = minimize_scalar(totCompfeps,method='bounded',bounds=[0,7], options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter})  #adding ftol for initial seed. could be different ftol
                 #https://docs.scipy.org/doc/scipy/reference/optimize.minimize_scalar-bounded.html#optimize-minimize-scalar-bounded
-            self.vprint('Calculating inttimesfeps')
+            #DELETE self.vprint('Calculating inttimesfeps')
             comp_epsmax,t_epsmax,x_epsmax = self.inttimesfeps(epsres['x'],Cbs.to('1/d').value, Csps.to('1/d').value)
             if np.sum(comp_epsmax*x_epsmax) > self.scomp0:
                 x0 = x_epsmax
@@ -180,19 +181,19 @@ class SLSQPScheduler(SurveySimulation):
             #bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))] # original method of defining bounds
             initguess = x0*self.t0.to(u.d).value
             self.save_initguess = initguess
-            self.vprint('x0')
-            self.vprint(x0)
-            self.vprint(len(x0[x0==1.]))
+            #DELETE self.vprint('x0')
+            #DELETE self.vprint(x0)
+            #DELETE self.vprint(len(x0[x0==1.]))
             #self.vprint([i for i.value in x0 if np.isinf(i)])
             #self.vprint([i for i in x0 if np.isnan(i)])
             #self.vprint([i for i in x0 if np.isinf(i)])
-            self.vprint('t0')
-            self.vprint(self.t0)
-            self.vprint([i for i in self.t0.value if np.isnan(i)])
-            self.vprint([i for i in self.t0.value if np.isinf(i)])
-            self.vprint([i for i in self.t0.value if i<0.])
-            self.vprint([i for i in self.t0.value if i==0.])
-            self.vprint('initguess: ' + str(initguess))
+            #DELETE self.vprint('t0')
+            #DELETE self.vprint(self.t0)
+            #DELETE self.vprint([i for i in self.t0.value if np.isnan(i)])
+            #DELETE self.vprint([i for i in self.t0.value if np.isinf(i)])
+            #DELETE self.vprint([i for i in self.t0.value if i<0.])
+            #DELETE self.vprint([i for i in self.t0.value if i==0.])
+            #DELETE self.vprint('initguess: ' + str(initguess))
             #I specify ftol to be .5% of the scomp0 NEED TO IMPROVE THIS
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
                     constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':self.maxiter, 'ftol':self.ftol, 'disp': True}) #original method
@@ -445,50 +446,54 @@ class SLSQPScheduler(SurveySimulation):
             valfZmax = self.valfZmax[sInds].copy()
             valfZmin = self.valfZmin[sInds].copy()
             TK = self.TimeKeeping
-            COPYabsTimefZmin = self.absTimefZmin.copy().value
 
             #Time relative to now where fZmin occurs
-            timeWherefZminOccursRelativeToNow = COPYabsTimefZmin - TK.currentTimeAbs.copy().value #of all targets
-            zero = 0
-            indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0] # find all inds that are less than 0
+            timeWherefZminOccursRelativeToNow = self.absTimefZmin.copy().value - TK.currentTimeAbs.copy().value #of all targets
+            indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < 0))[0] # find all inds that are less than 0
             cnt = 0.
             while len(indsLessThan0) > 0: #iterate until we know the next time in the future where fZmin occurs for all targets
                 cnt += 1.
-                timeWherefZminOccursRelativeToNow[indsLessThan0] = COPYabsTimefZmin[indsLessThan0] - TK.currentTimeAbs.copy().value + cnt*365.25 #take original and add 365.25 until we get the right number of years to add
-                indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < zero))[0]
+                timeWherefZminOccursRelativeToNow[indsLessThan0] = self.absTimefZmin.copy().value[indsLessThan0]\
+                    - TK.currentTimeAbs.copy().value + cnt*365.25 #take original and add 365.25 until we get the right number of years to add
+                indsLessThan0 = np.where((timeWherefZminOccursRelativeToNow < 0))[0]
             timeToStartfZmins = timeWherefZminOccursRelativeToNow#contains all "next occuring" fZmins in absolute time
 
-            absTimefZminAfterNow = [timeToStartfZmins[i] for i in range(len(timeToStartfZmins)) if timeToStartfZmins[i] > 0. and i in sInds]#filter by times in future and times not filtered
-            nextAbsTime = min(np.asarray(absTimefZminAfterNow))#find the minimum time
+            timefZminAfterNow = [timeToStartfZmins[i] for i in sInds]#range(len(timeToStartfZmins)) if i in sInds]#filter by times in future and times not filtered
+            timeToAdvance = min(np.asarray(timefZminAfterNow))#find the minimum time
             #self.vprint(len(timeToStartfZmins))
             #self.vprint(len(sInds))
-            sInd = np.where((timeToStartfZmins == nextAbsTime))[0][0]#find the index of the minimum time and return that sInd
-            del absTimefZminAfterNow
-
+            sInd = np.where((timeToStartfZmins == timeToAdvance))[0][0]#find the index of the minimum time and return that sInd
+            del timefZminAfterNow
+            if len(self.DRM) > 0:
+                print 'prev Arr: ' + str(self.DRM[-1]['arrival_time'].value) + ' prev DetTime' + str(self.DRM[-1]['det_time'].value)
+            #pdb.set_trace()
             #Advance To fZmin of Target
-            success = self.TimeKeeping.advanceToAbsTime(Time(nextAbsTime+TK.currentTimeAbs.copy().value, format='mjd', scale='tai'), False)
+            success = self.TimeKeeping.advanceToAbsTime(Time(timeToAdvance+TK.currentTimeAbs.copy().value, format='mjd', scale='tai'), False)
+            print 'advc: ' + str(np.round(timeToAdvance,2)) + '  '
             #DELETE self.vprint(success)
             #self.vprint('advancedToAbsTime: ' + str(TK.currentTimeAbs.copy()))
             waitTime = None
 
-            selectInd = np.argmin(fZ - valfZmax)#this is most negative when fZ is smallest 
+            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
+                self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
+            selectInd = np.argmin(np.abs(fZ - valfZmin))#this is most negative when fZ is smallest 
             sInd = sInds[selectInd]
 
-            #Check if exoplanetObsTime would be exceeded
-            OS = self.OpticalSystem
-            Comp = self.Completeness
-            TL = self.TargetList
-            Obs = self.Observatory
-            TK = self.TimeKeeping
-            allModes = OS.observingModes
-            mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
-            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
-            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-            intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
-            if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
-                self.vprint('max allowed integration time would be exceeded')
-                sInd = None
-                waitTime = 1.*u.d
+            # #Check if exoplanetObsTime would be exceeded
+            # OS = self.OpticalSystem
+            # Comp = self.Completeness
+            # TL = self.TargetList
+            # Obs = self.Observatory
+            # TK = self.TimeKeeping
+            # allModes = OS.observingModes
+            # mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+            # maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+            # maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            # intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+            # if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+            #     self.vprint('max allowed integration time would be exceeded')
+            #     sInd = None
+            #     waitTime = 1.*u.d
         #H is simply G but where comp and intTime are calculated using fZmin
         #elif self.selectionMetric == 'TauIzodmin/CIzodmin': #H maximum C at fZmin / T at fZmin
         #else:
