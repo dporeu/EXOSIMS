@@ -103,6 +103,9 @@ def extractArgs(args):
     EXOSIMS_QUEUE_FILE_PATH = paths['EXOSIMS_QUEUE_FILE_PATH']
     if args.numCores == None:
         args.numCores == ['1']
+        if 'numCores' in paths.keys():
+            args.numCores = str(paths['numCores'])
+        #ADD CHECK TO DETERMINE IF NUMCORES IS SPECIFIED IN QUEUEU FILE
     numCoresString = str(int(args.numCores[0]))
     return EXOSIMS_QUEUE_FILE_PATH, numCoresString, paths
 
