@@ -102,8 +102,8 @@ class SLSQPScheduler(SurveySimulation):
         if self.t0 is None:
             #1. find nominal background counts for all targets in list
             dMagint = 25.0 # this works fine for WFIRST
-            self.vprint('dMagint: ' + str(self.dMagint))
-            self.vprint('WAint: ' + str(self.WAint))
+            #self.vprint('dMagint: ' + str(self.dMagint))
+            #self.vprint('WAint: ' + str(self.WAint))
             _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.WAint, self.detmode)
 
@@ -153,7 +153,7 @@ class SLSQPScheduler(SurveySimulation):
             self.vprint('Finding baseline fixed-eps optimal target set.')
             def totCompfeps(eps):
                 compstars,tstars,x = self.inttimesfeps(eps, Cbs.to('1/d').value, Csps.to('1/d').value)
-                self.vprint('totCompfeps: ' + str(len(x[x==0.])) + ' len tstars: ' + str(len(tstars[tstars>1e-10])))
+                #self.vprint('totCompfeps: ' + str(len(x[x==0.])) + ' len tstars: ' + str(len(tstars[tstars>1e-10])))
                 return -np.sum(compstars*x)
             #print(saltyburrito)
             #Note: There is no way to seed an initial solution to minimize scalar 
@@ -258,13 +258,9 @@ class SLSQPScheduler(SurveySimulation):
 
 
         x = np.array([x.solution_value() for x in xs])
-        self.vprint('Solver is FEASIBLE: ' + str(solver.FEASIBLE))
-        self.vprint('Solver is OPTIMAL: ' + str(solver.OPTIMAL))
-        self.vprint('Solver is BASIC: ' + str(solver.BASIC))
-        #self.vprint('Solver is iterations: ' + str(solver.iterations))
-        #self.vprint('Solver is nodes: ' + str(solver.nodes))
-
-        #solver.reset()
+        #self.vprint('Solver is FEASIBLE: ' + str(solver.FEASIBLE))
+        #self.vprint('Solver is OPTIMAL: ' + str(solver.OPTIMAL))
+        #self.vprint('Solver is BASIC: ' + str(solver.BASIC))
 
         return compstars,tstars,x
 
