@@ -479,21 +479,21 @@ class SLSQPScheduler(SurveySimulation):
             selectInd = np.argmin(np.abs(fZ - valfZmin))#this is most negative when fZ is smallest 
             sInd = sInds[selectInd]
 
-            # #Check if exoplanetObsTime would be exceeded
-            # OS = self.OpticalSystem
-            # Comp = self.Completeness
-            # TL = self.TargetList
-            # Obs = self.Observatory
-            # TK = self.TimeKeeping
-            # allModes = OS.observingModes
-            # mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
-            # maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
-            # maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
-            # intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
-            # if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
-            #     self.vprint('max allowed integration time would be exceeded')
-            #     sInd = None
-            #     waitTime = 1.*u.d
+            #Check if exoplanetObsTime would be exceeded
+            OS = self.OpticalSystem
+            Comp = self.Completeness
+            TL = self.TargetList
+            Obs = self.Observatory
+            TK = self.TimeKeeping
+            allModes = OS.observingModes
+            mode = filter(lambda mode: mode['detectionMode'] == True, allModes)[0]
+            maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = TK.get_ObsDetectionMaxIntTime(Obs, mode)
+            maxIntTime = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife)#Maximum intTime allowed
+            intTimes2 = self.calc_targ_intTime(sInd, TK.currentTimeAbs.copy(), mode)
+            if intTimes2 > maxIntTime: # check if max allowed integration time would be exceeded
+                self.vprint('max allowed integration time would be exceeded')
+                sInd = None
+                waitTime = 1.*u.d
         #H is simply G but where comp and intTime are calculated using fZmin
         #elif self.selectionMetric == 'TauIzodmin/CIzodmin': #H maximum C at fZmin / T at fZmin
         #else:
