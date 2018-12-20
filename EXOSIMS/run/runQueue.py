@@ -37,6 +37,8 @@ vprint = tvprint(True)
 
 def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     # wrap the run_sim in a try/except loop
+    # reset simulation at the end of each simulation
+    SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)
     nbmax = 10
     for attempt in range(nbmax):
         try:
