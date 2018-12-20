@@ -1769,13 +1769,21 @@ class SurveySimulation(object):
                 a string containing the file location, hashnumber of the cache name based off
                 of the completeness to be computed (completeness specs if available else standard module)
         """
-        tmp1 = self.Completeness.PlanetPhysicalModel.__class__.__name__
-        tmp2 = self.Completeness.PlanetPopulation.__class__.__name__
+        tmp1 = specs['completeness_specs']['modules']['PlanetPhysicalModel'] # comp specs
+        tmp2 = specs['completeness_specs']['modules']['PlanetPopulation'] # comp specs
+        tmp3 = specs['modules']['SimulatedUniverse']
+        tmp4 = specs['modules']['PlanetPopulation']
+        if tmp1 == ' ':
+            tmp1 = ''
+        if tmp2 == ' ':
+            tmp2 = ''
 
         cachefname = ''#declares cachefname
         mods =  ['Completeness','TargetList','OpticalSystem']#modules to look at
-        cachefname += str(tmp2)#Planet Pop
-        cachefname += str(tmp1)#Planet Physical Model
+        cachefname += str(tmp1)#Planet Pop
+        cachefname += str(tmp2)#Planet Physical Model
+        cachefname += str(tmp3)#Planet Physical Model
+        cachefname += str(tmp4)#Planet Physical Model
         if specs.has_key('selectionMetric'):
             cachefname += specs['selectionMetric']
         if specs.has_key('Izod'):
