@@ -1769,8 +1769,12 @@ class SurveySimulation(object):
                 a string containing the file location, hashnumber of the cache name based off
                 of the completeness to be computed (completeness specs if available else standard module)
         """
-        tmp1 = specs['completeness_specs']['modules']['PlanetPhysicalModel'] # comp specs
-        tmp2 = specs['completeness_specs']['modules']['PlanetPopulation'] # comp specs
+        try: 
+            tmp1 = specs['completeness_specs']['modules']['PlanetPhysicalModel'] # comp specs
+            tmp2 = specs['completeness_specs']['modules']['PlanetPopulation'] # comp specs
+        except:
+            tmp1 = ''
+            tmp2 = ''
         tmp3 = specs['modules']['SimulatedUniverse']
         tmp4 = specs['modules']['PlanetPopulation']
         if tmp1 == ' ':
