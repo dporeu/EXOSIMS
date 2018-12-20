@@ -474,8 +474,8 @@ class SLSQPScheduler(SurveySimulation):
             #self.vprint('advancedToAbsTime: ' + str(TK.currentTimeAbs.copy()))
             waitTime = None
 
-            fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
-                self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
+            #fZ = self.ZodiacalLight.fZ(self.Observatory, self.TargetList, sInds,  
+            #    self.TimeKeeping.currentTimeAbs.copy() + slewTimes[sInds], self.detmode)
             selectInd = np.argmin(np.abs(fZ - valfZmin))#this is most negative when fZ is smallest 
             sInd = sInds[selectInd]
 
