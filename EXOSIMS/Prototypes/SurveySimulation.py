@@ -1790,16 +1790,23 @@ class SurveySimulation(object):
         cachefname += str(tmp2)#Planet Physical Model
         cachefname += str(tmp3)#Planet Physical Model
         cachefname += str(tmp4)#Planet Physical Model
+
+        tmp= ''
         if specs.has_key('selectionMetric'):
-            cachefname += specs['selectionMetric']
+            tmp += specs['selectionMetric']
         if specs.has_key('Izod'):
-            cachefname += specs['Izod']
+            tmp += specs['Izod']
         if specs.has_key('maxiter'):
-            cachefname += str(specs['maxiter'])
+            tmp += str(specs['maxiter'])
         if specs.has_key('ftol'):
-            cachefname += str(specs['ftol'])
+            tmp += str(specs['ftol'])
+        if specs.has_key('missionLife'):
+            tmp += str(specs['missionLife'])
+        if specs.has_key('missionPortion'):
+            tmp += str(specs['missionPortion'])
+
         for mod in mods: cachefname += self.modules[mod].__module__.split(".")[-1]#add module name to end of cachefname?
-        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value)).hexdigest()#turn cachefname into hashlib
+        cachefname += hashlib.md5(str(self.TargetList.Name)+str(self.TargetList.tint0.to(u.d).value) + tmp).hexdigest()#turn cachefname into hashlib
         # fileloc = os.path.split(inspect.getfile(self.__class__))[0]
         cachefname = os.path.join(self.cachedir,cachefname+os.extsep)#join into filepath and fname
         #Needs file terminator (.starkt0, .t0, etc) appended done by each individual use case.
