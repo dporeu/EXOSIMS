@@ -58,13 +58,13 @@ class plotTimeline(object):
         if self.args == None: # Nothing was provided as input
             # grab random pkl file from folder
             pklfiles_in_folder = [myFileName for myFileName in os.listdir(folder) if 'run' in myFileName and '.pkl' in myFileName]  # Get names of all pkl files in path
-            pklfname = np.random.choice(pklFiles)
+            pklfname = np.random.choice(pklfiles_in_folder)
             pklfile = os.path.join(folder,pklfname)
         elif 'pklfile' in self.args.keys(): # specific pklfile was provided for analysis
             pklfile = self.args['pklfile']
         else: # grab random pkl file from folder
             pklfiles_in_folder = [myFileName for myFileName in os.listdir(folder) if 'run' in myFileName and '.pkl' in myFileName]  # Get names of all pkl files in path
-            pklfname = np.random.choice(pklFiles)
+            pklfname = np.random.choice(pklfiles_in_folder)
             pklfile = os.path.join(folder,pklfname)
         outspecfile = os.path.join(folder,'outspec.json')
 
