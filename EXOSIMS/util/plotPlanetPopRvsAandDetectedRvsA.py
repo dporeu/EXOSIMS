@@ -95,7 +95,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ################ 
         #Create Figure and define gridspec
         fig2 = plt.figure(2, figsize=(8.5+3,4.5))
-        gs = gridspec.GridSpec(2,5, width_ratios=[4,1,0.3,4,1.25], height_ratios=[1,4])
+        gs = gridspec.GridSpec(2,5, width_ratios=[6,1,0.3,6,1.25], height_ratios=[1,4])
         gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
         plt.rc('axes',linewidth=2)
         plt.rc('lines',linewidth=2)
