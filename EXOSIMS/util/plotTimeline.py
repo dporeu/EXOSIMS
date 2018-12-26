@@ -236,8 +236,8 @@ class plotTimeline(object):
         DRM, outspec = self.loadFiles(pklfile, outspecfile)
 
         allModes = outspec['observingModes']
-        mode1 = [mode for mode in allModes if 'detectionMode' in mode.keys()]
-        assert len(mode1) == 1, 'This needs to be enhanced'
+        mode1 = [mode for mode in allModes if 'detectionMode' in mode.keys() or 'detection' in mode.keys()]
+        assert len(mode1) >= 1, 'This needs to be enhanced'
         mode = mode1[0]
         if not 'timeMultiplier' in mode.keys():
             mode['timeMultiplier'] = 1.
