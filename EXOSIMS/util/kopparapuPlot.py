@@ -345,6 +345,54 @@ class kopparapuPlot(object):#RpLBins(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='png', dpi=500)
 
+        ###########################################################################
+        #### Save Bins to File
+        lines = []
+        lines.append('#################################################################################')
+        lines.append('Rp_Lo: 0.90 , Rp_hi: 1.4 , L_lo: 0.3586 , L_hi: 1.1080 , Planet Type: EarthLike')
+        #planet type, planet temperature
+        lines.append('   mean: ' + str(np.mean(earthLikeBins)))
+        lines.append('   upper STD: ' + str(np.mean(earthLikeBins)+np.std(earthLikeBins)))
+        lines.append('   lower STD: ' + str(np.mean(earthLikeBins)-np.std(earthLikeBins)))
+        lines.append('   5th percentile: ' + str(np.percentile(earthLikeBins,5)))
+        lines.append('   25th percentile: ' + str(np.percentile(earthLikeBins,25)))
+        lines.append('   50th percentile: ' + str(np.percentile(earthLikeBins,50)))
+        lines.append('   75th percentile: ' + str(np.percentile(earthLikeBins,75)))
+        lines.append('   90th percentile: ' + str(np.percentile(earthLikeBins,90)))
+        lines.append('   95th percentile: ' + str(np.percentile(earthLikeBins,95)))
+        lines.append('   min #: ' + str(min(earthLikeBins)))
+        lines.append('   \% at min percentile: ' + str(float(earthLikeBins.count(min(earthLikeBins)))/len(earthLikeBins)))
+        lines.append('   max #: ' + str(max(earthLikeBins)))
+        lines.append('   50th percentile: ' + str(np.percentile(earthLikeBins,50)))
+        lines.append('   75th percentile: ' + str(np.percentile(earthLikeBins,75)))
+
+        #### Plotting Types
+        pTypesLabels = ['Rocky','Super Earth','Sub-Neptune','Sub-Jovian','Jovian']
+        for i in np.arange(len(self.Rp_hi)): # iterate over Rp sizes
+            for j in np.arange(len(self.L_hi[0])): # iterate over Luminosities
+                lines.append('#################################################################################')
+                lines.append('Rp_Lo: ' + str(self.Rp_lo[i]) + ' , Rp_hi: ' + str(self.Rp_hi[i]) + \
+                        ' , L_lo: ' + str(self.L_lo[i][j]) + ' , L_hi: ' + str(self.L_hi[i][j]) + \
+                        ' , Planet Type: ' + pTypesLabels[i] + ' , Temperatures: ' + Labels[j])
+                #planet type, planet temperature
+                lines.append('   mean: ' + str(binMeans[i][j]))
+                lines.append('   upper STD: ' + str(binUpperQ[i][j]))
+                lines.append('   lower STD: ' + str(binLowerQ[i][j]))
+                lines.append('   5th percentile: ' + str(fifthPercentile[i][j]))
+                lines.append('   25th percentile: ' + str(twentyfifthPercentile[i][j]))
+                lines.append('   50th percentile: ' + str(fiftiethPercentile[i][j]))
+                lines.append('   75th percentile: ' + str(seventyfifthPercentile[i][j]))
+                lines.append('   90th percentile: ' + str(ninetiethPercentile[i][j]))
+                lines.append('   95th percentile: ' + str(nintyfifthPercentile[i][j]))
+                lines.append('   min #: ' + str(minNumDetected[i][j]))
+                lines.append('   \% at min percentile: ' + str(percentAtMinimum[i][j]))
+                lines.append('   max #: ' + str(maxNumDetected[i][j]))
+                lines.append('   50th percentile: ' + str(fiftiethPercentile[i][j]))
+                lines.append('   75th percentile: ' + str(seventyfifthPercentile[i][j]))
+
+        fname = 'KopparapuDATA_' + folder.split('/')[-1] + '_' + date
+        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
+            g.write("\n".join(lines))
 
     def gen_summary_kopparapu(self,folder):
         """
