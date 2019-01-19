@@ -9,7 +9,8 @@ from numpy import pi, cos, sin, arccos, arange
 import os
 if not 'DISPLAY' in os.environ.keys(): #Check environment for keys
     import matplotlib.pyplot as plt 
-    use('Agg')
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
 else:
     import matplotlib.pyplot as plt 
 import mpl_toolkits.mplot3d
@@ -42,7 +43,8 @@ def pt_pt_distances(xyzpoints):
         d_diff_pts = np.linalg.norm(diff_pts,axis=1) # calculate linear distance between points
         ss_d, ss_ind = secondSmallest(d_diff_pts) #we must get the second smallest because the smallest is the point itself
         distances.append(ss_d)
-    return distances
+        closest_point_inds.append(ss_ind)
+    return distances, closest_point_inds
 
 def f(vv):
     # This is the optimization problem objective function
@@ -52,8 +54,8 @@ def f(vv):
     zz = vv[2::3]
     xyzpoints = np.asarray([[xx[i], yy[i], zz[i]]for i in np.arange(len(zz))])
     #Calculates the sum(min(dij)**3.)
-    distances = pt_pt_distances(xyzpoints)
-    return -sum(np.asarray(distances)**2.) #squares and sums each point-to-closest point distances
+    distances, inds = pt_pt_distances(xyzpoints)
+    return sum(1./np.asarray(distances))#-sum(np.asarray(distances)**2.) #squares and sums each point-to-closest point distances
 
 def nlcon2(vvv,ind):
     """ This is the nonlinear constraint on each "point" of the sphere
@@ -185,10 +187,10 @@ if __name__ == '__main__':
     out4kv = np.asarray([[out4kx[i], out4ky[i], out4kz[i]] for i in np.arange(len(out4kx))])
 
     #### Calculate array of minimum distances between points
-    dist01k = pt_pt_distances(out01kv)
-    dist1k = pt_pt_distances(out1kv)
-    dist2k = pt_pt_distances(out2kv)
-    dist4k = pt_pt_distances(out4kv)
+    dist01k, inds01k = pt_pt_distances(out01kv)
+    dist1k, inds1k = pt_pt_distances(out1kv)
+    dist2k, inds2k = pt_pt_distances(out2kv)
+    dist4k, inds4k = pt_pt_distances(out4kv)
 
     #### Get minimum, maximum, and mean distances as function of number of iterations #########
     minimumDistances = np.asarray([min(dist01k), min(dist1k), min(dist2k), min(dist4k)])

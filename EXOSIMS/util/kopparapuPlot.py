@@ -146,9 +146,12 @@ class kopparapuPlot(object):#RpLBins(object):
         TK = SS.TimeKeeping
 
         out = self.gen_summary_kopparapu(folder)#out contains information on the detected planets
+        self.out = out
 
         # Put Planets into appropriate bins
         aggbins, earthLikeBins = self.putPlanetsInBoxes(out,TL)
+        self.aggbins = aggbins
+        self.earthLikeBins = earthLikeBins
 
         # Plot Data
         figVio = plt.figure(figsize=(8.5,4.5))
@@ -207,7 +210,7 @@ class kopparapuPlot(object):#RpLBins(object):
         for i in np.arange(len(self.Rp_hi)): # iterate over Rp sizes
             for j in np.arange(len(self.L_hi[0])): # iterate over Luminosities
                 # Create array of bin counts for this specific bin type
-                counts = np.asarray([aggbins[k][i][j] for k in np.arange(len(out['starinds']))]) # create array of counts
+                counts = np.asarray([aggbins[k][i][j] for k in np.arange(len(out['detected']))]) # create array of counts
                 binMeans[i][j] = np.mean(counts)
                 binUpperQ[i][j] = np.mean(counts) + np.std(counts)
                 binLowerQ[i][j] = np.mean(counts) - np.std(counts)
@@ -342,6 +345,54 @@ class kopparapuPlot(object):#RpLBins(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='png', dpi=500)
 
+        ###########################################################################
+        #### Save Bins to File
+        lines = []
+        lines.append('#################################################################################')
+        lines.append('Rp_Lo: 0.90 , Rp_hi: 1.4 , L_lo: 0.3586 , L_hi: 1.1080 , Planet Type: EarthLike')
+        #planet type, planet temperature
+        lines.append('   mean: ' + str(np.mean(earthLikeBins)))
+        lines.append('   upper STD: ' + str(np.mean(earthLikeBins)+np.std(earthLikeBins)))
+        lines.append('   lower STD: ' + str(np.mean(earthLikeBins)-np.std(earthLikeBins)))
+        lines.append('   5th percentile: ' + str(np.percentile(earthLikeBins,5)))
+        lines.append('   25th percentile: ' + str(np.percentile(earthLikeBins,25)))
+        lines.append('   50th percentile: ' + str(np.percentile(earthLikeBins,50)))
+        lines.append('   75th percentile: ' + str(np.percentile(earthLikeBins,75)))
+        lines.append('   90th percentile: ' + str(np.percentile(earthLikeBins,90)))
+        lines.append('   95th percentile: ' + str(np.percentile(earthLikeBins,95)))
+        lines.append('   min #: ' + str(min(earthLikeBins)))
+        lines.append('   \% at min percentile: ' + str(float(earthLikeBins.count(min(earthLikeBins)))/len(earthLikeBins)))
+        lines.append('   max #: ' + str(max(earthLikeBins)))
+        lines.append('   50th percentile: ' + str(np.percentile(earthLikeBins,50)))
+        lines.append('   75th percentile: ' + str(np.percentile(earthLikeBins,75)))
+
+        #### Plotting Types
+        pTypesLabels = ['Rocky','Super Earth','Sub-Neptune','Sub-Jovian','Jovian']
+        for i in np.arange(len(self.Rp_hi)): # iterate over Rp sizes
+            for j in np.arange(len(self.L_hi[0])): # iterate over Luminosities
+                lines.append('#################################################################################')
+                lines.append('Rp_Lo: ' + str(self.Rp_lo[i]) + ' , Rp_hi: ' + str(self.Rp_hi[i]) + \
+                        ' , L_lo: ' + str(self.L_lo[i][j]) + ' , L_hi: ' + str(self.L_hi[i][j]) + \
+                        ' , Planet Type: ' + pTypesLabels[i] + ' , Temperatures: ' + Labels[j])
+                #planet type, planet temperature
+                lines.append('   mean: ' + str(binMeans[i][j]))
+                lines.append('   upper STD: ' + str(binUpperQ[i][j]))
+                lines.append('   lower STD: ' + str(binLowerQ[i][j]))
+                lines.append('   5th percentile: ' + str(fifthPercentile[i][j]))
+                lines.append('   25th percentile: ' + str(twentyfifthPercentile[i][j]))
+                lines.append('   50th percentile: ' + str(fiftiethPercentile[i][j]))
+                lines.append('   75th percentile: ' + str(seventyfifthPercentile[i][j]))
+                lines.append('   90th percentile: ' + str(ninetiethPercentile[i][j]))
+                lines.append('   95th percentile: ' + str(nintyfifthPercentile[i][j]))
+                lines.append('   min #: ' + str(minNumDetected[i][j]))
+                lines.append('   \% at min percentile: ' + str(percentAtMinimum[i][j]))
+                lines.append('   max #: ' + str(maxNumDetected[i][j]))
+                lines.append('   50th percentile: ' + str(fiftiethPercentile[i][j]))
+                lines.append('   75th percentile: ' + str(seventyfifthPercentile[i][j]))
+
+        fname = 'KopparapuDATA_' + folder.split('/')[-1] + '_' + date
+        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
+            g.write("\n".join(lines))
 
     def gen_summary_kopparapu(self,folder):
         """
@@ -379,8 +430,8 @@ class kopparapuPlot(object):#RpLBins(object):
 
             out['fname'].append(f)
             dets = np.hstack([row['plan_inds'][row['det_status'] == 1]  for row in res['DRM']])
-            out['detected'].append(dets)
-            
+            out['detected'].append(dets) # planet inds
+
             #out['WAs'].append(np.hstack([row['det_params']['WA'][row['det_status'] == 1].to('arcsec').value for row in res['DRM']]))
             #out['dMags'].append(np.hstack([row['det_params']['dMag'][row['det_status'] == 1] for row in res['DRM']]))
             #out['rs'].append(np.hstack([row['det_params']['d'][row['det_status'] == 1].to('AU').value for row in res['DRM']]))
@@ -396,6 +447,7 @@ class kopparapuPlot(object):#RpLBins(object):
             #out['es'].append(res['systems']['e'][dets])
             #out['Mps'].append((res['systems']['Mp'][dets]/u.M_earth).decompose())
             out['starinds'].append(np.hstack([[row['star_ind']]*len(np.where(row['det_status'] == 1)[0]) for row in res['DRM']]))
+            #DELETE out['starinds'].append(np.hstack([row['star_ind'][row['det_status'] == 1] for row in res['DRM']]))
 
             #if includeUniversePlanetPop == True:
             #  out['allRps'].append((res['systems']['Rp']/u.R_earth).decompose().value)
@@ -424,10 +476,11 @@ class kopparapuPlot(object):#RpLBins(object):
         for i in np.arange(len(out['starinds'])): # iterate over simulations
             bins = np.zeros((5,3)) # planet type, planet temperature
             earthLike = 0
-            starinds = out['starinds'][i]
+            starinds = out['starinds'][i]#inds of the stars
+            plan_inds = out['detected'][i] # contains the planet inds
             Rps = out['Rps'][i]
             smas = out['smas'][i]
-            for j in np.arange(len(starinds)): # iterate over targets
+            for j in np.arange(len(plan_inds)): # iterate over targets
                 Rp = Rps[j]
                 bini = np.where((self.Rp_lo < Rp)*(Rp < self.Rp_hi))[0] # index of planet size, rocky,...,jovian
                 if bini.size == 0: # correction for if planet is outside planet range
@@ -444,7 +497,7 @@ class kopparapuPlot(object):#RpLBins(object):
                 L_plan = L_star/sma**2. # adjust star luminosity by distance^2 in AU
                 L_lo = self.L_lo[bini] # lower bin range of luminosity
                 L_hi = self.L_hi[bini] # upper bin range of luminosity
-                binj = np.where((L_lo < L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
+                binj = np.where((L_lo > L_plan)*(L_plan > L_hi))[0] # index of planet temp. cold,warm,hot
                 if binj.size == 0: # correction for if planet luminosity is out of bounds
                     if L_plan > max(L_lo):
                         binj = 0
@@ -454,6 +507,9 @@ class kopparapuPlot(object):#RpLBins(object):
                     binj = binj[0]
 
                 bins[bini,binj] += 1 # just increment count by 1
+                del bini
+                del binj
+
 
                 #NEED CITATION ON THIS
                 if (Rp >= 0.90 and Rp <= 1.4) and (L_plan >= 0.3586 and L_plan <= 1.1080):

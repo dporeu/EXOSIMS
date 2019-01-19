@@ -214,9 +214,6 @@ class plotC0vsT0andCvsT(object):
         vprint(-2.5*np.log10(np.mean(fZ).value))
 
 
-
-
-
         #################################################################################
         #### Plot CvsT with Lines
         #From starkAYO_staticSchedule_withPlotting_copy_Feb6_2018.py
@@ -332,6 +329,28 @@ class plotC0vsT0andCvsT(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+
+
+
+
+        ############################################
+        #### Calculate Lines for Data Output
+        lines = []
+        lines.append('Sum Planned Integration Time: ' + str(sum(initt0[initt0.value>1e-10])))
+        lines.append('Number Planned Observations: ' + str(numObs0))
+        lines.append('Planned Tsettling+Toh: ' + str(numObs0*sumOHTIME))
+        RDT = [rdt for rdt in raw_det_time if rdt>1e-10]
+        sumrdt = sum(RDT)
+        lines.append('Sum Obs Integration Time: ' + str(sumrdt))
+        lines.append('Number Obs Made: ' + str(len(RDT)))
+        lines.append('Obs Tsettling+Toh: ' + str(len(RDT)*sumOHTIME))
+
+
+
+        #### Save Data File
+        fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
+        with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
+            g.write("\n".join(lines))
 
 
     def multiRunPostProcessing(self, PPoutpath, folders):
