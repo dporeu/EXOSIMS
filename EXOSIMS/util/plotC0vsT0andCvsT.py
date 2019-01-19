@@ -55,6 +55,7 @@ import random
 import datetime
 import re
 from EXOSIMS.util.vprint import vprint
+from scipy.optimize import minimize,minimize_scalar
 
 class plotC0vsT0andCvsT(object):
     """Designed to plot Planned Completeness and Observed Completeness
@@ -216,12 +217,121 @@ class plotC0vsT0andCvsT(object):
 
 
 
+        #################################################################################
+        #### Plot CvsT with Lines
+        #From starkAYO_staticSchedule_withPlotting_copy_Feb6_2018.py
+        #Lines 1246-1313, 1490-1502
+        sInds = np.arange(TL.nStars)
+        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
+        fZ, fZabsTime = ZL.calcfZmin(sInds, Obs, TL, TK, mode, SS.cachefname)
+        fEZ = ZL.fEZ0
+        WA = OS.WA0
+        dmag = np.linspace(1, COMP.dMagLim, num=1500,endpoint=True)
+        Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
+        Cb = np.zeros(sInds.shape[0])
+        Csp = np.zeros(sInds.shape[0])
+        for i in xrange(dmag.shape[0]):
+            Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag[i], WA, mode)
+        Cb = Cb[:]#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
+        Csp = Csp[:]#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
+        #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
+        
+        TaylorCDFofGaussianFigsTau = plt.figure(703)
+        cmap = plt.cm.get_cmap('autumn_r')
+        intTimes = np.logspace(-6,3,num=400,base=10.0)#define integration times we will evaluate at
+        actualComp = np.zeros([sInds.shape[0],intTimes.shape[0]])
+        for j in np.arange(intTimes.shape[0]):
+            actualComp[:,j] = COMP.comp_per_intTime((intTimes[j]+np.zeros([sInds.shape[0]]))*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)
+        
+        #Plot Top 10 black Lines
+        tmpI = np.argsort(-np.amax(actualComp,1))#Sort Indicies by maximum valued actual comps
+        for l in np.arange(10):#np.arange(sInds.shape[0]):
+            l = tmpI[l]
+            plt.plot(intTimes,actualComp[l,:],color='k',zorder=1)
+        ###############################
 
+        #Plot Gaussian CvsT intTimes####################
+        #n=0
+        #kmax=100
+        #tmpdmag = np.zeros([sInds.shape[0],intTimes.shape[0]])
+        #taylorCDFvals = np.zeros([sInds.shape[0],intTimes.shape[0]])
+        #taylorCDFvalsbylogT = np.zeros([sInds.shape[0],intTimes.shape[0]])
+        #for i in np.arange(intTimes.shape[0]):#Generate dmag corresponding to all reasonable intTimes
+            #tmpIntTimes = np.zeros([sInds.shape[0]])+intTimes[i]
+            #tmpdmag[:,i] = OS.calc_dMag_per_intTime(tmpIntTimes*u.d, TL, sInds, fZ, np.zeros([sInds.shape[0]])+fEZ, np.zeros([sInds.shape[0]])+WA, mode, Cb, Csp)
+        #for i in np.arange(sInds.shape[0]):
+            #taylorCDFvals[i,:] = #taylorCDF(tmpdmag[i,:],n,kmax,A[i],B[i],C[i],D[i])#Calculate all C from model
+            #taylorCDFvalsbylogT[i,:] = #taylorCDFvals[i,:]/np.log10(intTimes*86400*1000)#intTimes in units of microseconds...#np.log10(intTimes*10**8)#We can't use np.log10(intTimes because the denominator is 0 at 1 day...)
+        #PerStarMaxtaylorCDFvalsbylogT = #np.amax(taylorCDFvalsbylogT,1)#Gives maximum CbyT for each Star with Taylor Fit
+        #PerStarMaxtaylorCDFinds = #np.argmax(taylorCDFvalsbylogT,1)
+        #AbsMaxtaylorCDFvalsbylogT = max(PerStarMaxtaylorCDFvalsbylogT)#[np.arange(sInds.shape[0])!=np.argmax(PerStarMaxtaylorCDFvalsbylogT)])#Gives the maximum CbyT overall
+        #PerStarMintaylorCDFvalsbylogT = min(PerStarMaxtaylorCDFvalsbylogT)#Gives minimum of maxCbyT from Taylor Fit for each star
+        #tmpI = np.argsort(-PerStarMaxtaylorCDFvalsbylogT)
+        #mV = TL.starMag(sInds,self.mode['lam'])#Note these come out really well when applied as coloring
+        #maxmV = max(mV)
+        #minmV = min(mV)
+        #Plot lines ov CvsTau
+        #for i in np.arange(sInds.shape[0]):#np.arange(10):
+            #Fraction = #(PerStarMaxtaylorCDFvalsbylogT[i]-PerStarMintaylorCDFvalsbylogT)/(AbsMaxtaylorCDFvalsbylogT-PerStarMintaylorCDFvalsbylogT)
+            #Fraction = (np.log10(PerStarMaxtaylorCDFvalsbylogT[i])-np.log10(PerStarMintaylorCDFvalsbylogT))/(np.log10(AbsMaxtaylorCDFvalsbylogT)-np.log10(PerStarMintaylorCDFvalsbylogT))
+            # Fraction = (mV[i]-minmV)/(maxmV-minmV)#comes out really well when applied as coloring
+            #rgba = cmap(Fraction)
+            #r=rgba[0]
+            #g=rgba[1]
+            #b=rgba[2]
+            #a=1-g#0.5 is too light I think. The red doesn't look red enough. maybe assign to r value...
+            #assert r<=1
+            #assert b<=1
+            #plt.plot(intTimes,taylorCDFvals[i,:],color=(r,g,b,a),zorder=2)
 
+        plt.xscale('log')
+        #plt.ylim(-0.01,0.15)
+        #plt.xlim(10e-5,10)
+        plt.rcParams['axes.linewidth']=2
+        plt.rc('font',weight='bold') 
+        plt.title('Generic Title I Forgot to Update',weight='bold')
+        plt.xlabel(r'Integration Time, $\tau$ (days)',weight='bold',fontsize=14)
+        plt.ylabel('Completeness',weight='bold',fontsize=14)
+        plt.rc('axes',linewidth=2)
+        plt.rc('lines',linewidth=2)
+        #Plot Colorbar
+        cmap = plt.cm.get_cmap('autumn_r')
+        #sc = plt.scatter([nan,nan],[0,1],c=[AbsMaxtaylorCDFvalsbylogT,PerStarMintaylorCDFvalsbylogT],cmap=cmap)
+        #cbar = plt.colorbar(sc)
+        #lar = np.round([PerStarMintaylorCDFvalsbylogT,PerStarMintaylorCDFvalsbylogT+0.2*(AbsMaxtaylorCDFvalsbylogT-PerStarMintaylorCDFvalsbylogT),PerStarMintaylorCDFvalsbylogT+0.4*(AbsMaxtaylorCDFvalsbylogT-PerStarMintaylorCDFvalsbylogT),PerStarMintaylorCDFvalsbylogT+0.6*(AbsMaxtaylorCDFvalsbylogT-PerStarMintaylorCDFvalsbylogT),PerStarMintaylorCDFvalsbylogT+0.8*(AbsMaxtaylorCDFvalsbylogT-PerStarMintaylorCDFvalsbylogT),AbsMaxtaylorCDFvalsbylogT],decimals=4)
+        #cbar.ax.set_yticklabels([str(lar[0]),str(lar[1]),str(lar[2]),str(lar[3]),str(lar[4]),str(lar[5])])
+        #cbar.set_label(r'$max(\frac{C}{log(\tau)})$',weight='bold',fontsize=14)#removed ax.
 
+        compatt0 = np.zeros([sInds.shape[0]])
+        for j in np.arange(sInds.shape[0]):
+            compatt0[j] = COMP.comp_per_intTime(sim.SurveySimulation.t0[j], TL, sInds[j], fZ[j], fEZ, WA, mode, Cb[j]/u.s, Csp[j]/u.s)
+        plt.scatter(sim.SurveySimulation.t0,compatt0,color='k',marker='o',zorder=3,label=r'$C_{i}(\tau_{0})$')
 
+        #### Plot Top Performer at dMagLim, max(C/t)
+        tCp, tCb, tCsp = OS.Cp_Cb_Csp(TL, tmpI[0], fZ[tmpI[0]], fEZ, COMP.dMagLim, WA, mode)
+        Cdmaglim = COMP.comp_per_intTime(sim.SurveySimulation.t0[tmpI[0]], TL, tmpI[0], fZ[tmpI[0]], fEZ, WA, mode, tCb[0], tCsp[0])
+        plt.scatter(sim.SurveySimulation.t0[tmpI[0]],Cdmaglim,marker='x',color='red',zorder=3)
 
+        def objfun(t, TL, tmpI, fZ, fEZ, WA, mode, tCb, tCsp):
+            return -COMP.comp_per_intTime(t*u.d, TL, tmpI, fZ, fEZ, WA, mode, tCb, tCsp)/t
 
+        out = minimize_scalar(objfun,method='bounded',bounds=[0,10**3.], args=(TL, tmpI[0], fZ[tmpI[0]], fEZ, WA, mode, tCb[0], tCsp[0]))#, options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter}) 
+        tMaxCbyT = out['x']
+        CtMaxCbyT = COMP.comp_per_intTime(tMaxCbyT*u.d, TL, tmpI[0], fZ[tmpI[0]], fEZ, WA, mode, tCb[0], tCsp[0])
+        plt.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='red',zorder=3)
+        #DELETEvprint('out')
+        #DELETEvprint(out)
+
+        plt.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $C_{i}(\tau)$',zorder=1)
+        plt.legend(loc=2)
+        plt.xlim([1e-6,1.1*max(sim.SurveySimulation.t0.value)])
+        plt.ylim([0,1.1*max(compatt0)])
+        plt.show(block=False)
+
+        fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
 
 
     def multiRunPostProcessing(self, PPoutpath, folders):
