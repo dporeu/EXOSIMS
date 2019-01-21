@@ -104,23 +104,23 @@ class SLSQPScheduler(SurveySimulation):
             dMagint = 25.0 # this works fine for WFIRST
             #self.vprint('dMagint: ' + str(self.dMagint))
             #self.vprint('WAint: ' + str(self.WAint))
-            _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, range(self.TargetList.nStars),  
+            _, Cbs, Csps = self.OpticalSystem.Cp_Cb_Csp(self.TargetList, np.arange(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, dMagint, self.WAint, self.detmode)
 
             #find baseline solution with dMagLim-based integration times
             #DELETE self.vprint('Finding baseline fixed-time optimal target set.')
             #3.
-            t0 = self.OpticalSystem.calc_intTime(self.TargetList, range(self.TargetList.nStars),  
+            t0 = self.OpticalSystem.calc_intTime(self.TargetList, np.arange(self.TargetList.nStars),  
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.dMagint, self.WAint, self.detmode)
             #DELETE self.vprint('Calculated t0')
             #4.
-            comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, range(self.TargetList.nStars), 
+            comp0 = self.Completeness.comp_per_intTime(t0, self.TargetList, np.arange(self.TargetList.nStars), 
                     self.ZodiacalLight.fZ0, self.ZodiacalLight.fEZ0, self.WAint, self.detmode, C_b=Cbs, C_sp=Csps)
             
             #### 5. Formulating MIP to filter out stars we can't or don't want to reasonably observe
             #DELETE self.vprint('Instantiating Solver')
             solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING) # create solver instance
-            xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in range(len(comp0)) ] # define x_i variables for each star either 0 or 1
+            xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(comp0)) ] # define x_i variables for each star either 0 or 1
             self.vprint('Finding baseline fixed-time optimal target set.')
 
             #constraint is x_i*t_i < maxtime
