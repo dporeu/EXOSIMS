@@ -181,7 +181,7 @@ class SLSQPScheduler(SurveySimulation):
 
             maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife = self.TimeKeeping.get_ObsDetectionMaxIntTime(self.Observatory, self.detmode, self.TimeKeeping.currentTimeNorm.copy())
             maxIntTime   = min(maxIntTimeOBendTime, maxIntTimeExoplanetObsTime, maxIntTimeMissionLife) # Maximum intTime allowed
-            bounds = [(0,maxIntTime.to(u.d).value) for i in range(len(sInds))]
+            bounds = [(0,maxIntTime.to(u.d).value) for i in np.arange(len(sInds))]
             #bounds = [(0,self.maxTime.to(u.d).value) for i in range(len(sInds))] # original method of defining bounds
             initguess = x0*self.t0.to(u.d).value
             self.save_initguess = initguess
@@ -239,7 +239,7 @@ class SLSQPScheduler(SurveySimulation):
 
         
         solver = pywraplp.Solver('SolveIntegerProblem',pywraplp.Solver.CBC_MIXED_INTEGER_PROGRAMMING)
-        xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in range(len(compstars)) ]
+        xs = [ solver.IntVar(0.0,1.0, 'x'+str(j)) for j in np.arange(len(compstars)) ]
         constraint = solver.Constraint(-solver.infinity(), self.maxTime.to(u.d).value)
 
         for j,x in enumerate(xs):
@@ -354,7 +354,7 @@ class SLSQPScheduler(SurveySimulation):
             #need to update time used in choose_next_target
             
             timeLeft = (self.TimeKeeping.missionLife.copy() - self.TimeKeeping.currentTimeNorm.copy())*self.TimeKeeping.missionPortion.copy()
-            bounds = [(0,timeLeft.to(u.d).value) for i in range(len(sInds))]
+            bounds = [(0,timeLeft.to(u.d).value) for i in np.arange(len(sInds))]
 
             initguess = self.t0[sInds].to(u.d).value
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), constraints=self.constraints,
