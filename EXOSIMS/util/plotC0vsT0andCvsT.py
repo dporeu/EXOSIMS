@@ -261,7 +261,7 @@ class plotC0vsT0andCvsT(object):
             actualComp[:,j] = COMP.comp_per_intTime((intTimes[j]+np.zeros([sInds.shape[0]]))*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)
         
         #Plot Top 10 black Lines
-        compObs = COMP.comp_per_intTime(sim.SurveySimulation.t0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)
+        compObs = COMP.comp_per_intTime(sim.SurveySimulation.t0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
         compObs2 = np.asarray([gg for gg in compObs if gg > 0.])
         tmpI = np.asarray([gg for gg in sInds if compObs[gg] > 0.])
         maxCI = np.argmax(compObs) # should return ind of max C0
@@ -295,8 +295,9 @@ class plotC0vsT0andCvsT(object):
         def plotSpecialPoints(ind, TL, OS, fZ, fEZ, COMP, WA, mode, sim):
             #### Plot Top Performer at dMagLim, max(C/t)
             tCp, tCb, tCsp = OS.Cp_Cb_Csp(TL, ind, fZ[ind], fEZ, COMP.dMagLim, WA, mode)
-            Cdmaglim = COMP.comp_per_intTime(sim.SurveySimulation.t0[ind], TL, ind, fZ[ind], fEZ, WA, mode, tCb[0], tCsp[0])
-            plt.scatter(sim.SurveySimulation.t0[ind],Cdmaglim,marker='x',color='red',zorder=3)
+            tdMaglim = OS.calc_intTime(TL, ind, fZ[ind], fEZ, COMP.dMagLim, WA, mode)
+            Cdmaglim = COMP.comp_per_intTime(tdMaglim, TL, ind, fZ[ind], fEZ, WA, mode, tCb[0], tCsp[0])
+            plt.scatter(tdMaglim,Cdmaglim,marker='x',color='red',zorder=3)
 
             def objfun(t, TL, tmpI, fZ, fEZ, WA, mode, OS):
                 dmag = OS.calc_dMag_per_intTime(t*u.d, TL, tmpI, fZ, fEZ, WA, mode)#We must calculate a different dmag for each integraiton time
