@@ -185,7 +185,7 @@ class TargetList(object):
         """
         
         for att in self.__dict__.keys():
-            print('%s: %r' % (att, getattr(self, att)))
+            vprint('%s: %r' % (att, getattr(self, att)))
         
         return 'Target List class object attributes'
 
@@ -215,7 +215,7 @@ class TargetList(object):
         # number of target stars
         self.nStars = len(self.Name)
         if self.explainFiltering:
-            print("%d targets imported from star catalog."%self.nStars)
+            vprint("%d targets imported from star catalog."%self.nStars)
 
         if self.filterSubM:
             self.subM_filter()
@@ -226,7 +226,7 @@ class TargetList(object):
         # filter out nan attribute values from Star Catalog
         self.nan_filter()
         if self.explainFiltering:
-            print("%d targets remain after nan filtering."%self.nStars)
+            vprint("%d targets remain after nan filtering."%self.nStars)
 
         # populate completeness values
         self.comp0 = Comp.target_completeness(self)
@@ -419,22 +419,22 @@ class TargetList(object):
         if self.filterBinaries:
             self.binary_filter()
             if self.explainFiltering:
-                print("%d targets remain after binary filter."%self.nStars)
+                vprint("%d targets remain after binary filter."%self.nStars)
 
         # filter out systems with planets within the IWA
         self.outside_IWA_filter()
         if self.explainFiltering:
-            print("%d targets remain after IWA filter."%self.nStars)
+            vprint("%d targets remain after IWA filter."%self.nStars)
 
         # filter out systems where minimum integration time is longer than cutoff
         self.int_cutoff_filter()
         if self.explainFiltering:
-            print("%d targets remain after integration time cutoff filter."%self.nStars)
+            vprint("%d targets remain after integration time cutoff filter."%self.nStars)
         
         # filter out systems which do not reach the completeness threshold
         self.completeness_filter()
         if self.explainFiltering:
-            print("%d targets remain after completeness filter."%self.nStars)
+            vprint("%d targets remain after completeness filter."%self.nStars)
 
         # # filter out systems which do not reach the completeness threshold
         # self.vis_mag_filter(Vmagmincrit=0.)
