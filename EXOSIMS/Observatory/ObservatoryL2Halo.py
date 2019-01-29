@@ -4,7 +4,7 @@ from astropy.time import Time
 import numpy as np
 import os, inspect
 import scipy.interpolate as interpolate
-import scipy.integrate as itg
+import scipy.integrate as integrate
 try:
     import cPickle as pickle
 except:
@@ -402,10 +402,18 @@ class ObservatoryL2Halo(Observatory):
         Returns:
             angle (integer):
                 Angular separation between two target stars 
+            u1 (ndarray 1x3):
+                Unit vector pointing from telescope to target star N1 at tA
+            u2 (ndarray 1x3):
+                Unit vector pointing from telescope to target star N2 at tB
+            r_tscp (ndarray 2x3):
+                Position vector in rotating frame (origin at center of mass
+                of Earth and Sun) of telescope in nondimensional units (really, just 1AU)
+                for times tA and tB
         """
         
         t = np.linspace(tA.value,tB.value,2)    #discretizing time
-        t = Time(t,format='mjd')                #converting time to modified julian date
+        t = Time(t,format='mjd', scale='tai')   #converting time to modified julian date
         
         #position of telescope at the given times in rotating frame
         r_halo = self.haloPosition(t).to('au')
@@ -456,28 +464,36 @@ class ObservatoryL2Halo(Observatory):
                 star_pos[x,:].to('AU').value) for x in range(len(star_pos))])*u.AU
 
         return star_rot
-    
-    def integrate(self,s0,t):
+
+    def integrate_EoM(self,s0,t,events=None,t_eval=None):
         """Integrates motion in the CRTBP given initial conditions
         
-        This method returns a star's position vector in the rotating frame of 
-        the Circular Restricted Three Body Problem.  
+        This method returns a star's state vector in the rotating frame of 
+        the Circular Restricted Three Body Problem. A hub for basic 
+        integration of the equations of motion.
         
         Args:
-            s0 (integer 1x6 array):
-                Initial state vector consisting of stacked position and velocity vectors
-                in normalized units
-            t (integer):
-                Times in normalized units
-
-        Returns:
-            s (integer nx6 array):
+            s0 (float 6x1 array or 42x1 array):
                 State vector consisting of stacked position and velocity vectors
-                in normalized units
+                in normalized units.
+            t (float 2x1 list):
+                Times in normalized units. Given as t = [t0, tF].
+            events (func with size m):
+                Event functions can be passed on if needed. Default is None.
+            t_eval (float nx1 array):
+                Times in normalized units, where any element ti of t is
+                t0 <= ti <= tF. Used if integration is needed at specific 
+                time points.
+            
+        Returns:
+            sol (Object):
+                IVP solution object 
+            
         """
         
-        EoM = lambda s,t: self.equationsOfMotion_CRTBP(t,s)
-             
-        s = itg.odeint(EoM, s0, t, full_output = 0,rtol=2.5e-14,atol=1e-22)
+        EoM = self.equationsOfMotion_CRTBP
+
+        sol = integrate.solve_ivp(EoM, t, s0, method = 'Radau', t_eval = t_eval, \
+           events=events, rtol=1e-13,atol=1e-13)
         
-        return s
+        return sol
