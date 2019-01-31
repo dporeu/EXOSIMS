@@ -215,6 +215,8 @@ class plotC0vsT0andCvsT(object):
         self.writeDATAtoFile(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date)
         self.plotCvsTlines(TL, Obs, TK, OS, SS, ZL, sim, COMP, PPoutpath, folder, date)
 
+        plt.close('all')
+
     def writeDATAtoFile(self, initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date):
         ############################################
         #### Calculate Lines for Data Output
