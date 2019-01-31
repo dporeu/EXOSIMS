@@ -19,6 +19,22 @@ For each test script, ``e2eTests`` will:
 
 The test suite will record a ``PASS`` or ``FAIL`` condition for each individual step, and will print a summary of results for all scripts at the end of execution. 
 
+There are currently 14 test scripts as of 01/23/2019
+* 01_all_defaults.json - Fundamental prototype module loading and execution test
+* 02_KnownRV_FAP=1_WFIRSTObs_staticEphem.json - Testing KnownRV with static Ephemeris
+* 03_EarthTwin_Coronagraph_GarrettComp.json - Testing Earth Twin Planet Population and Garrett Completeness
+* 04_KeplerLike_Occulter_linearJScheduler.json - Testing KeplerLike, Occulter, and LinearJScheduler
+* 05_SAG13_Forecaster_BrownCompleteness.json - Testing BrownCompleteness, SAG13, and Forecaster
+* 06_Occulter.json - Testing Occulter in a quasi relistic universe
+* 07_TKtestingOBfromFile0.json - Testing loading OB from file SampleOB.csv with OBendTime[-1]=380days and 200days total, termination by exceeding MissionLife=1yr and MissonPortion=1
+* 08_TKtestingOBfromFile1.json - Testing termination by exceeding exoplanetObsTime with MissionLife=1yr and MissonPortion=0.5479452
+* 09_TKtestingOBfromFile2.json - Testing termination by exceeding OBendTime[-1] using SampleOB1.csv
+* 10_TKtestingOBfromFile3.json - Testing termination by exceeding MissionLife using SampleOB2.csv
+* 11_TKtestingOBfromFile4.json - Testing termination by exceeding exoplanetObsTime with MissionLife=1yr and MissionPortion=0.5
+* 12_TKtestingOBfromJSON.json - Testing generation of Observing Blocks (OB) from JSON script, OBduration=14days, MissionPortion=0.5, MissionLife=1yr
+* 13_TKtestingSingleOBFullPortion.json - Testing OB are automatically generated for MissionLife=1yr and MissionPortion=1
+* 14_TKtestingSingleOBHalfPortion.json - Testing OB are automatically generated for MissionLife=1yr and MissionPortion=0.5
+
 
 Unit Testing
 ====================

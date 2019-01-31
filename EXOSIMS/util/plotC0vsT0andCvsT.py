@@ -80,6 +80,8 @@ class plotC0vsT0andCvsT(object):
         if isinstance(self.args,dict):
             if 'file' in self.args.keys():
                 file = self.args['file']
+            else:
+                file = self.pickPKL(folder)
         else:
             file = self.pickPKL(folder)
         fullPathPKL = os.path.join(folder,file) # create full file path

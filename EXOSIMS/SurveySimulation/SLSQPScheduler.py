@@ -199,6 +199,12 @@ class SLSQPScheduler(SurveySimulation):
             #DELETE self.vprint([i for i in self.t0.value if i==0.])
             #DELETE self.vprint('initguess: ' + str(initguess))
             #I specify ftol to be .5% of the scomp0 NEED TO IMPROVE THIS
+
+            #While we use all sInds as input, theoretically, this can be solved faster if we use the following lines:
+            #sInds = np.asarray([sInd for sInd in sInds if np.bool(x0[sInd])])
+            #bounds = [(0,maxIntTime.to(u.d).value) for i in np.arange(len(sInds))]
+            #and use initguess[sInds], fZ[sInds], and self.t0[sInds].
+            #There was no noticable performance improvement
             ires = minimize(self.objfun, initguess, jac=self.objfun_deriv, args=(sInds,fZ), 
                     constraints=self.constraints, method='SLSQP', bounds=bounds, options={'maxiter':self.maxiter, 'ftol':self.ftol, 'disp': True}) #original method
             #tol=self.scomp0*0.0001,
