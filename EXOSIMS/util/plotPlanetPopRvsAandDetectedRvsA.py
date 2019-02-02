@@ -40,7 +40,6 @@ from EXOSIMS.util.read_ipcluster_ensemble import gen_summary
 from EXOSIMS.util.read_ipcluster_ensemble import read_all
 from numpy import linspace
 from matplotlib.ticker import NullFormatter, MaxNLocator
-#import matplotlib.pyplot as plt
 from matplotlib import ticker
 import astropy.units as u
 import matplotlib.patheffects as PathEffects
@@ -126,9 +125,9 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         xlims = [min(x),max(x)]# of aPOP
         ylims = [min(y),max(y)]# of RpPOP
         # Find the min/max of the POP data and APPLY LIMITS
-        xmin = 0.1#min(xlims)#min of a
-        xmax = 30#max(xlims)#max of a
-        ymin = 1#min(ylims)#min of Rp
+        #xmin = 0.1#min(xlims)#min of a
+        #xmax = 30#max(xlims)#max of a
+        #ymin = 1#min(ylims)#min of Rp
         #ymax = 22.6#max(y)#max of Rp
         xlims = [xmin, xmax]#sma range
         ylims = [ymin, ymax]#Rp range
@@ -350,8 +349,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         fname = 'RpvsSMAdetectionsGridOverlay_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500, bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='png', dpi=500, bbox_inches='tight')
-
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500, bbox_inches='tight')
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500, bbox_inches='tight')
 
         del out
         del allres
