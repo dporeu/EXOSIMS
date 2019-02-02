@@ -66,29 +66,30 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
             PPoutpath (string) - output path to place data in
             folder (string) - full filepath to folder containing runs
         """
-        #Get name of pkl file
-        if not os.path.exists(folder):
+        if not os.path.exists(folder):#Folder must exist
             raise ValueError('%s not found'%folder)
+        if not os.path.exists(PPoutpath):#PPoutpath must exist
+            raise ValueError('%s not found'%PPoutpath) 
+        outspecfile = os.path.join(folder,'outspec.json')
+        if not os.path.exists(outspecfile):#outspec file not found
+            raise ValueError('%s not found'%outspecfile) 
 
+        #Extract Data from folder containing pkl files
         out = gen_summary(folder)#out contains information on the detected planets
         allres = read_all(folder)# contains all drm from all missions in folder
 
-        Rpunits = allres[0]['systems']['Rp'].unit
-        allres_Rp = np.concatenate([allres[i]['systems']['Rp'].value for i in range(len(allres))])
-        smaunits = allres[0]['systems']['a'].unit
-        allres_sma = np.concatenate([allres[i]['systems']['a'].value for i in range(len(allres))])
-        x = allres_sma
-        y = allres_Rp
-
+        #Convert Extracted Data to x,y
+        x, y =extractXY(out, allres)
+        
         # Define the x and y data for detected planets
         det_Rps = np.concatenate(out['Rps']).ravel() # Planet Radius in Earth Radius of detected planets
         det_smas = np.concatenate(out['smas']).ravel()
 
-
         #Create Mission Object To Extract Some Plotting Limits
-        outspecfile = os.path.join(folder,'outspec.json')
         sim = EXOSIMS.MissionSim.MissionSim(outspecfile, nopar=True)
         ymax = np.nanmax(sim.PlanetPhysicalModel.ggdat['radii']).to('earthRad').value
+
+
 
 
         ################ 
@@ -129,8 +130,9 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         #xmax = 30#max(xlims)#max of a
         #ymin = 1#min(ylims)#min of Rp
         #ymax = 22.6#max(y)#max of Rp
-        xlims = [xmin, xmax]#sma range
-        ylims = [ymin, ymax]#Rp range
+        
+        #xlims = [xmin, xmax]#sma range
+        #ylims = [ymin, ymax]#Rp range
 
         # Make the 'main' temperature plot
         # Define the number of bins
@@ -354,3 +356,19 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
 
         del out
         del allres
+
+    def extractXY(self, out, allres):
+        """
+        Simply pulls out the Rp and SMA data for each star in the pkl file
+        Args:
+        Returns:
+            x () - SMA of all Stars
+            y () - Rp of all Stars
+        """
+        Rpunits = allres[0]['systems']['Rp'].unit
+        allres_Rp = np.concatenate([allres[i]['systems']['Rp'].value for i in range(len(allres))])
+        smaunits = allres[0]['systems']['a'].unit
+        allres_sma = np.concatenate([allres[i]['systems']['a'].value for i in range(len(allres))])
+        x = allres_sma
+        y = allres_Rp
+        return x,y
