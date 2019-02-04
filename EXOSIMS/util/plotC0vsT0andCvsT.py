@@ -205,6 +205,7 @@ class plotC0vsT0andCvsT(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
 
         #Manually Calculate the difference to veryify all det_times are the same
@@ -329,6 +330,7 @@ class plotC0vsT0andCvsT(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Does Nothing

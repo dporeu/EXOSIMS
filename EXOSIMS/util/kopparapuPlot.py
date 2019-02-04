@@ -338,12 +338,14 @@ class kopparapuPlot(object):#RpLBins(object):
         fname = 'KopparapuBar_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='png', dpi=500)
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500)
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
         plt.figure(figVio.number)
         fname = 'KopparapuVio_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='png', dpi=500)
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500)
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
 
         ###########################################################################
         #### Save Bins to File

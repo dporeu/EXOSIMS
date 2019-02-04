@@ -118,3 +118,4 @@ class yieldPlotHistograms(object):
         plt.savefig(os.path.join(PPoutpath,fname+'.png'))
         plt.savefig(os.path.join(PPoutpath,fname+'.svg'))
         plt.savefig(os.path.join(PPoutpath,fname+'.eps'))
+        plt.savefig(os.path.join(PPoutpath,fname+'.pdf'))

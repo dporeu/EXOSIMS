@@ -299,7 +299,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         fname = 'RpvsSMAdetections_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'), format='png', dpi=500)
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='png', dpi=500)
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500)
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500)
 
         #Apply Grid to Detected Planet Pop
         #create coarse grid and calculate total numbers in each bin
