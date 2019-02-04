@@ -125,10 +125,10 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         # Set up default x and y limits
         xlims = [min(x),max(x)]# of aPOP
         ylims = [min(y),max(y)]# of RpPOP
-        xmin = min(x)
-        xmax = max(x)
-        ymin = min(y)
-        ymax = min(y)
+        xmin = xlims[0]
+        xmax = xlims[1]
+        ymin = ylims[0]
+        ymax = ylims[1]
         # Find the min/max of the POP data and APPLY LIMITS
         #xmin = 0.1#min(xlims)#min of a
         #xmax = 30#max(xlims)#max of a
