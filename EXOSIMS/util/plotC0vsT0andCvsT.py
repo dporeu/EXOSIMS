@@ -135,6 +135,10 @@ class plotC0vsT0andCvsT(object):
         ax2 = plt.subplot(gs[2])#CvsT lines
         ax3 = plt.subplot(gs[3])#1D histogram of Completeness
 
+        ax1 = plt.subplot(gs[1])#BLANK
+        TXT1.xaxis.set_visible(False)
+        TXT1.yaxis.set_visible(False)
+
 
         #IF SurveySimulation module is SLSQPScheduler
         initt0 = None
@@ -197,7 +201,13 @@ class plotC0vsT0andCvsT(object):
         vprint(sum(det_times))
         vprint(sum(char_times))
 
-
+        #Display Text
+        #Observations
+        #Planned: num
+        #Actual: num
+        TXT1.text(0.5, 0.4, 'Observations\nPlanned:%s\nActual:%s'%("{:,}".format(numObs0),"{:,}".format(len(raw_det_time))), weight='bold', horizontalalignment='center', fontsize=8)
+        #TXT1.text(0.5, 0.4, '# Universe\nPlanets:\n%s'%("{:,}".format(len(x))), weight='bold', horizontalalignment='center', fontsize=8)
+        #TXT1.text(0.5, -0.1, '# Sims\n%s'%("{:,}".format(len(out['Rps']))), weight='bold', horizontalalignment='center', fontsize=8)
 
         #calculate completeness at the time of each star observation
         slewTimes = np.zeros(len(star_inds))
