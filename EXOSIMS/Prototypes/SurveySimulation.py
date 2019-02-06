@@ -265,7 +265,7 @@ class SurveySimulation(object):
         #if requested, rescale based on luminosities and mode limits
         if scaleWAdMag:
             for i,Lstar in enumerate(TL.L):
-                if (Lstar < 1.6) and (Lstar > 0):
+                if (Lstar < 1.6) and (Lstar > 0.):
                    self.dMagint[i] = Comp.dMagLim - 0.5 + 2.5 * np.log10(Lstar)
                 else:
                     self.dMagint[i] = Comp.dMagLim
@@ -398,10 +398,10 @@ class SurveySimulation(object):
                 #DELETE self.vprint('Pre Obs Det: ' + str(self.TimeKeeping.currentTimeNorm))
                 # PERFORM DETECTION and populate revisit list attribute
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
-                        self.observation_detection(sInd, det_intTime, det_mode)
+                        self.observation_detection(sInd, det_intTime.copy(), det_mode)
                 # update the occulter wet mass
                 if OS.haveOcculter == True:
-                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime, 'det')
+                    DRM = self.update_occulter_mass(DRM, sInd, det_intTime.copy(), 'det')
                 # populate the DRM with detection results
                 DRM['det_time'] = det_intTime.to('day')
                 DRM['det_status'] = detected
@@ -508,7 +508,7 @@ class SurveySimulation(object):
         Input dt is the total amount of time, including all overheads and extras
         used for the previous observation."""
 
-        self.TimeKeeping.allocate_time( dt*(1 - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
+        self.TimeKeeping.allocate_time( dt*(1. - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
                 addExoplanetObsTime=False )
 
     def next_target(self, old_sInd, mode):
@@ -555,7 +555,7 @@ class SurveySimulation(object):
         # look for available targets
         # 1. initialize arrays
         slewTimes = np.zeros(TL.nStars)*u.d
-        fZs = np.zeros(TL.nStars)/u.arcsec**2
+        fZs = np.zeros(TL.nStars)/u.arcsec**2.
         dV  = np.zeros(TL.nStars)*u.m/u.s
         intTimes = np.zeros(TL.nStars)*u.d
         obsTimes = np.zeros([2,TL.nStars])*u.d
@@ -1068,7 +1068,7 @@ class SurveySimulation(object):
                     allowedCharTimes[map_i,map_j] = maxIntTime_nOB - intTimes_int[map_i,map_j]
         
         # 3.67 filter out any stars that are not observable at all
-        filterDuds = np.sum(allowedSlewTimes,axis=1) > 0
+        filterDuds = np.sum(allowedSlewTimes,axis=1) > 0.
         sInds = sInds[filterDuds]
         
         # 4. choose a slew time for each available star
@@ -1301,14 +1301,14 @@ class SurveySimulation(object):
             else:
                 Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            T = 2.*np.pi*np.sqrt(sp**3./mu)
             t_rev = TK.currentTimeNorm.copy() + T/2.
         # otherwise, revisit based on average of population semi-major axis and mass
         else:
             sp = SU.s.mean()
             Mp = SU.Mp.mean()
             mu = const.G*(Mp + Ms)
-            T = 2.*np.pi*np.sqrt(sp**3/mu)
+            T = 2.*np.pi*np.sqrt(sp**3./mu)
             t_rev = TK.currentTimeNorm.copy() + 0.75*T
 
         # finally, populate the revisit list (NOTE: sInd becomes a float)
@@ -1369,7 +1369,7 @@ class SurveySimulation(object):
         
         # initialize outputs, and check if there's anything (planet or FA) to characterize
         characterized = np.zeros(len(det), dtype=int)
-        fZ = 0./u.arcsec**2
+        fZ = 0./u.arcsec**2.
         systemParams = SU.dump_system_params(sInd) # write current system params by default
         SNR = np.zeros(len(det))
         intTime = None
@@ -1448,7 +1448,7 @@ class SurveySimulation(object):
             SNRplans = np.zeros(len(planinds))
             if len(planinds) > 0:
                 # initialize arrays for SNR integration
-                fZs = np.zeros(self.ntFlux)/u.arcsec**2
+                fZs = np.zeros(self.ntFlux)/u.arcsec**2.
                 systemParamss = np.empty(self.ntFlux, dtype='object')
                 Ss = np.zeros((self.ntFlux, len(planinds)))
                 Ns = np.zeros((self.ntFlux, len(planinds)))
@@ -1490,13 +1490,13 @@ class SurveySimulation(object):
             # calculate the false alarm SNR (if any)
             SNRfa = []
             if pIndsChar[-1] == -1:
-                fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2
+                fEZ = self.lastDetected[sInd,1][-1]/u.arcsec**2.
                 dMag = self.lastDetected[sInd,2][-1]
                 WA = self.lastDetected[sInd,3][-1]*u.arcsec
                 C_p, C_b, C_sp = OS.Cp_Cb_Csp(TL, sInd, fZ, fEZ, dMag, WA, mode)
                 S = (C_p*intTime).decompose().value
-                N = np.sqrt((C_b*intTime + (C_sp*intTime)**2).decompose().value)
-                SNRfa = S/N if N > 0 else 0.
+                N = np.sqrt((C_b*intTime + (C_sp*intTime)**2.).decompose().value)
+                SNRfa = S/N if N > 0. else 0.
             
             # save all SNRs (planets and FA) to one array
             SNRinds = np.where(det)[0][tochar]
@@ -1513,8 +1513,8 @@ class SurveySimulation(object):
             if FA:
                 WAs = np.append(WAs, self.lastDetected[sInd,3][-1]*u.arcsec)
             # check for partial spectra
-            IWA_max = mode['IWA']*(1 + mode['BW']/2.)
-            OWA_min = mode['OWA']*(1 - mode['BW']/2.)
+            IWA_max = mode['IWA']*(1. + mode['BW']/2.)
+            OWA_min = mode['OWA']*(1. - mode['BW']/2.)
             char[char] = (WAchar < IWA_max) | (WAchar > OWA_min)
             characterized[char] = -1
             # encode results in spectra lists (only for planets, not FA)

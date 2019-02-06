@@ -96,7 +96,7 @@ class SLSQPScheduler(SurveySimulation):
                     self.t0 = pickle.load(f)
                 sInds = np.arange(self.TargetList.nStars)
                 fZ = np.array([self.ZodiacalLight.fZ0.value]*len(sInds))*self.ZodiacalLight.fZ0.unit
-                self.scomp0 = -self.objfun(self.t0.to(u.d).value,sInds,fZ)
+                self.scomp0 = -self.objfun(self.t0.to('day').value,sInds,fZ)
 
 
         if self.t0 is None:
@@ -126,7 +126,7 @@ class SLSQPScheduler(SurveySimulation):
             #constraint is x_i*t_i < maxtime
             constraint = solver.Constraint(-solver.infinity(),self.maxTime.to(u.day).value) #hmmm I wonder if we could set this to 0,maxTime
             for j,x in enumerate(xs):
-                constraint.SetCoefficient(x, t0[j].to(u.day).value + self.ohTimeTot.to(u.day).value) # this forms x_i*(t_0i+OH) for all i
+                constraint.SetCoefficient(x, t0[j].to('day').value + self.ohTimeTot.to(u.day).value) # this forms x_i*(t_0i+OH) for all i
             #DELETE self.vprint('Done defining constraint')
 
             #objective is max x_i*comp_i
@@ -220,7 +220,7 @@ class SLSQPScheduler(SurveySimulation):
                 self.vprint("Saved cached optimized t0 to %s"%cachefname)
 
         #Redefine filter inds
-        self.intTimeFilterInds = np.where((self.t0 > 0)*(self.t0 <= self.OpticalSystem.intCutoff) > 0)[0] # These indices are acceptable for use simulating    
+        self.intTimeFilterInds = np.where((self.t0 > 0.)*(self.t0 <= self.OpticalSystem.intCutoff) > 0.)[0] # These indices are acceptable for use simulating    
 
 
     def inttimesfeps(self,eps,Cb,Csp):
@@ -522,7 +522,7 @@ class SLSQPScheduler(SurveySimulation):
         if self.selectionMetric == 'priorityObs':
             pass
         else:
-            self.TimeKeeping.allocate_time( dt*(1 - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
+            self.TimeKeeping.allocate_time( dt*(1. - self.TimeKeeping.missionPortion)/self.TimeKeeping.missionPortion,\
                 addExoplanetObsTime=False )
 
 
