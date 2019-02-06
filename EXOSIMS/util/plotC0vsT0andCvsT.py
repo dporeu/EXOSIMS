@@ -116,7 +116,7 @@ class plotC0vsT0andCvsT(object):
         TK = SS.TimeKeeping
 
         plt.close('all')
-        plt.figure(2, figsize=(6,6))
+        plt.figure(2, figsize=(8.5,6))
         gs = gridspec.GridSpec(2,2, width_ratios=[6,1], height_ratios=[1,4])#DELETE ,0.3,6,1.25
         gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
 
@@ -136,8 +136,8 @@ class plotC0vsT0andCvsT(object):
         ax3 = plt.subplot(gs[3])#1D histogram of Completeness
 
         ax1 = plt.subplot(gs[1])#BLANK
-        TXT1.xaxis.set_visible(False)
-        TXT1.yaxis.set_visible(False)
+        ax1.xaxis.set_visible(False)
+        ax1.yaxis.set_visible(False)
 
 
         #IF SurveySimulation module is SLSQPScheduler
@@ -168,9 +168,6 @@ class plotC0vsT0andCvsT(object):
             #Plot t0 vs c0
             #scatter(initt0.value, comp0, label='SLSQP $C_0$ ALL')
             ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'SLSQP $C_0$, $\sum C_0$' + "=%0.2f"%sumComp0, alpha=0.5, color='blue')
-
-
-
 
             #This is a calculation check to ensure the targets at less than 1e-10 d are trash
             sIndsLT1us = np.arange(TL.nStars)[initt0.value < 1e-10]
@@ -205,7 +202,7 @@ class plotC0vsT0andCvsT(object):
         #Observations
         #Planned: num
         #Actual: num
-        TXT1.text(0.5, 0.4, 'Observations\nPlanned:%s\nActual:%s'%("{:,}".format(numObs0),"{:,}".format(len(raw_det_time))), weight='bold', horizontalalignment='center', fontsize=8)
+        ax1.text(0.5, 0.4, 'Observations\nPlanned:%s\nActual:%s'%("{:,}".format(numObs0),"{:,}".format(len(raw_det_time))), weight='bold', horizontalalignment='center', fontsize=8)
         #TXT1.text(0.5, 0.4, '# Universe\nPlanets:\n%s'%("{:,}".format(len(x))), weight='bold', horizontalalignment='center', fontsize=8)
         #TXT1.text(0.5, -0.1, '# Sims\n%s'%("{:,}".format(len(out['Rps']))), weight='bold', horizontalalignment='center', fontsize=8)
 
@@ -216,8 +213,8 @@ class plotC0vsT0andCvsT(object):
                 ZL.fEZ0, SS.WAint[star_inds], SS.detmode)
         sumComps = sum(comps)
 
-        xlims = [0, 1.1*max(raw_det_time)]
-        ylims = [0, 1.1*max(comps)]
+        xlims = [10.**-6, 1.1*max(raw_det_time)]
+        ylims = [10.**-6, 1.1*max(comps)]
         #if not plt.get_fignums(): # there is no figure open
         #    plt.figure()
         ax2.scatter(raw_det_time, comps, label=r'SLSQP $C_{t_{Obs}}$, $\sum C_{t_{Obs}}$' + "=%0.2f"%sumComps, alpha=0.5, color='black')
@@ -227,10 +224,10 @@ class plotC0vsT0andCvsT(object):
         ax2.set_ylabel(r'Target Completeness, $c_i$',weight='bold')
         legend_properties = {'weight':'bold'}
         ax2.legend(prop=legend_properties)
-        ax0.set_ylabel(r'$\frac{{\tau_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
-        ax3.set_xlabel(r'$\frac{{c_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
         ax0.set_xlim(xlims)
         ax3.set_ylim(ylims)
+        ax2.set_xscale('log')
+        ax0.set_xscale('log')
         ax0.set_xticks([])
         ax3.set_yticks([])
         nullfmt = NullFormatter()
@@ -238,6 +235,9 @@ class plotC0vsT0andCvsT(object):
         ax1.xaxis.set_major_formatter(nullfmt)
         ax1.yaxis.set_major_formatter(nullfmt)
         ax3.yaxis.set_major_formatter(nullfmt)
+        ax0.axis('off')
+        ax1.axis('off')
+        ax3.axis('off')
 
 
         #Done plotting Comp vs intTime of Observations
@@ -249,6 +249,9 @@ class plotC0vsT0andCvsT(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
+        ax0.set_ylabel(r'$\frac{{\tau_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
+        ax3.set_xlabel(r'$\frac{{c_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
+
 
         #Manually Calculate the difference to veryify all det_times are the same
         tmpdiff = np.asarray(initt0[star_inds]) - np.asarray(raw_det_time)
@@ -259,13 +262,23 @@ class plotC0vsT0andCvsT(object):
 
         self.writeDATAtoFile(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date)
         self.plotCvsTlines(TL, Obs, TK, OS, SS, ZL, sim, COMP, PPoutpath, folder, date, ax2)
-        fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
-        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
+        plt.gca()
 
-
+        ax0.axis('on')
+        ax1.axis('on')
+        ax3.axis('on')
+        ax0.set_xlim(xlims)
+        ax3.set_ylim(ylims)
+        ax2.set_xscale('log')
+        ax0.set_xscale('log')
+        ax0.set_xticks([])
+        ax3.set_yticks([])
+        nullfmt = NullFormatter()
+        ax0.xaxis.set_major_formatter(nullfmt)
+        ax1.xaxis.set_major_formatter(nullfmt)
+        ax1.yaxis.set_major_formatter(nullfmt)
+        ax3.yaxis.set_major_formatter(nullfmt)
+        
         xmin = xlims[0]
         xmax = xlims[1]
         ymin = ylims[0]
@@ -282,8 +295,7 @@ class plotC0vsT0andCvsT(object):
         ycenter = (ybins[0:-1]+ybins[1:])/2.0
         aspectratio = 1.0*(xmax - 0)/(1.0*ymax - 0)
          
-
-        x = raw_det_time
+        x = np.asarray(raw_det_time)
         y = comps
         H, xedges,yedges = np.histogram2d(x,y,bins=(xbins,ybins),normed=True)
         X = xcenter
@@ -295,10 +307,10 @@ class plotC0vsT0andCvsT(object):
         width0=np.diff(bins0)
         ax0.bar(center0, n0*(len(x)/float(numObs0)), align='center', width=width0, color='black', fill='black')
 
-        n3, bins3, patches3 = plt.subplot(gs[3]).hist(x, bins=xbins, color = 'black', fill='black', histtype='step',normed=True)#, hatch='-/')#1D histogram of universe a
+        n3, bins3, patches3 = plt.subplot(gs[3]).hist(y, bins=ybins, color = 'black', fill='black', histtype='step',normed=True)#, hatch='-/')#1D histogram of universe a
         center3 = (bins3[:-1] + bins3[1:]) / 2.
         width3=np.diff(bins3)
-        ax3.bar(center3, n3*(len(x)/float(numObs0)), align='center', width=width3, color='black', fill='black')
+        ax3.barh(center3, n3*(len(x)/float(numObs0)), align='center', height=width3, color='black', fill='black')
 
         fname = 'CvsTlinesAndHists_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -371,7 +383,7 @@ class plotC0vsT0andCvsT(object):
         ax2.plot(intTimes,actualComp[minCI,:],color='k',zorder=1)
         ###############################
 
-        ax2.set_xscale('log')
+        #ax2.set_xscale('log')
         #plt.rcParams['axes.linewidth']=2
         #plt.rc('font',weight='bold') 
         #plt.title('Generic Title I Forgot to Update',weight='bold')
@@ -411,11 +423,17 @@ class plotC0vsT0andCvsT(object):
         plotSpecialPoints(middleCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
         plotSpecialPoints(minCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
 
+        plt.gca()
         ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $C_{i}(\tau)$',zorder=1)
         ax2.legend(loc=2)
         ax2.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
-        ax2.set_ylim([0,1.1*max(compatt0)])
+        ax2.set_ylim([1e-6,1.1*max(compatt0)])
         plt.show(block=False)
+        fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
+        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
+        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Does Nothing
