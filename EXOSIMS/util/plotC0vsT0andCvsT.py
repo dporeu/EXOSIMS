@@ -183,7 +183,7 @@ class plotC0vsT0andCvsT(object):
 
             #Plot t0 vs c0
             #scatter(initt0.value, comp0, label='SLSQP $C_0$ ALL')
-            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'SLSQP $C_0$,\n$\sum C_0$' + "=%0.2f"%sumComp0, alpha=0.5, color='blue')
+            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$C_0$,' + '' + r'$\sum C_0$' + "=%0.2f"%sumComp0, alpha=0.5, color='blue')
 
             #This is a calculation check to ensure the targets at less than 1e-10 d are trash
             sIndsLT1us = np.arange(TL.nStars)[initt0.value < 1e-10]
@@ -208,10 +208,10 @@ class plotC0vsT0andCvsT(object):
         star_inds = [DRM['DRM'][i]['star_ind'] for i in np.arange(len(DRM['DRM']))]
         sumOHTIME = outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime'].value
         raw_det_time = [DRM['DRM'][i]['det_time'].value for i in np.arange(len(DRM['DRM']))]#DOES NOT INCLUDE overhead time
-        print(sum(initt0[initt0.value>0].value))
-        print(sum(np.asarray(raw_det_time)))
-        print(initt0[initt0.value>0].value - np.asarray(raw_det_time))
-        print(np.mean(initt0[initt0.value>0].value - np.asarray(raw_det_time)))
+        # print(sum(initt0[initt0.value>0].value))
+        # print(sum(np.asarray(raw_det_time)))
+        # print(initt0[initt0.value>0].value - np.asarray(raw_det_time))
+        # print(np.mean(initt0[initt0.value>0].value - np.asarray(raw_det_time)))
         det_times = [DRM['DRM'][i]['det_time'].value+sumOHTIME for i in np.arange(len(DRM['DRM']))]#includes overhead time
         det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1) for i in np.arange(len(DRM['DRM']))]
         ObsNums = [DRM['DRM'][i]['ObsNum'] for i in np.arange(len(DRM['DRM']))]
@@ -223,10 +223,10 @@ class plotC0vsT0andCvsT(object):
         vprint(sum(char_times))
 
         #DIRECT COMPARISON BETWEEN RAW_DET_TIME and initt0
-        print(sum(initt0[initt0.value>0].value))
-        print(sum(np.asarray(raw_det_time)))
-        print(initt0[initt0.value>0].value - np.asarray(raw_det_time))
-        print(np.mean(initt0[initt0.value>0].value - np.asarray(raw_det_time)))
+        # print(sum(initt0[initt0.value>0].value))
+        # print(sum(np.asarray(raw_det_time)))
+        # print(initt0[initt0.value>0].value - np.asarray(raw_det_time))
+        # print(np.mean(initt0[initt0.value>0].value - np.asarray(raw_det_time)))
 
         #Display Text
         #Observations
@@ -249,7 +249,7 @@ class plotC0vsT0andCvsT(object):
         ylims = [10.**-6, 1.1*max(comps)]
         #if not plt.get_fignums(): # there is no figure open
         #    plt.figure()
-        ax2.scatter(raw_det_time, comps, label=r'SLSQP $C_{t_{Obs}}$,\n$\sum C_{t_{Obs}}$' + "=%0.2f"%sumComps, alpha=0.5, color='black')
+        ax2.scatter(raw_det_time, comps, label=r'$C_{t_{Obs}}$,' + '' + r'$\sum C_{t_{Obs}}$' + "=%0.2f"%sumComps, alpha=0.5, color='black')
         ax2.set_xlim(xlims)
         ax2.set_ylim(ylims)
         ax2.set_xlabel(r'Integration Time, $\tau_i$, in (days)',weight='bold')
@@ -282,7 +282,6 @@ class plotC0vsT0andCvsT(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
         plt.show(block=False)
-        print saltyburrito
 
         ax0.set_ylabel(r'$\frac{{\tau_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
         ax3.set_xlabel(r'$\frac{{c_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
