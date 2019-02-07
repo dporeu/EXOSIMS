@@ -1,20 +1,17 @@
 """
+This plotting utility creates joint probability distributions of
+planetary radius vs semi-major axis for the SimulatedUniverse
+specified by outspec.json and the detected planet population
+aggregated from all .pkl files in 'folder'.
+Side histograms represent occurence frequency of the parameter
+per simulation.
+In the grid version, the number represents the summation of
+values in each cell.
 Plot Planet Population Radius vs a AND Detected Planet Rp vs a
-Plot will be shown and saved to the directory specified by runPath
-
-#Call this function by 
-python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/dir/containing/pkl/files/'
-
-#A specific example calling this function
-python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean2May18RS12CXXfZ01OB01PP01SU01/'
-Where '/home/dean/Documents/SIOSlab/Dean2May18RS12CXXfZ01OB01PP01SU01/' contains 1000 pkl files from a simulation run
-%run PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB54PP01SU01/'
-python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean21May18RS09CXXfZ01OB54PP03SU03/' #Baseline SAG13 Case
-python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean19May18RS09CXXfZ01OB54PP01SU01/' #Baseline KeplerLike2 Case
-python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean25May18RS09CXXfZ01OB56PP06SU01/' #SAG13 CompSpecs, PP-KeplerLike2 Case
-python PlotPlanetPopRvsAandDetectedRvsA.py --runPath '/home/dean/Documents/SIOSlab/Dean25May18RS09CXXfZ01OB56PP07SU03/' #KeplerLike2 CompSpecs, PP-SAG13
+Plot will be saved to the directory specified by PPoutpath
 
 Written by Dean Keithly on 5/6/2018
+Updated 2/7/2019
 """
 
 import random as myRand
