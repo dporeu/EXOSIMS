@@ -93,7 +93,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ################ 
         #Create Figure and define gridspec
         fig2 = plt.figure(2, figsize=(8.5,4.5))
-        gs = gridspec.GridSpec(3,5, width_ratios=[6,1,0.3,6,1.25], height_ratios=[0.75,1,4])
+        gs = gridspec.GridSpec(3,5, width_ratios=[6,1,0.3,6,1.25], height_ratios=[0.2,1,4])
         gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
         plt.rc('axes',linewidth=2)
         plt.rc('lines',linewidth=2)
@@ -121,6 +121,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         TXT1 = plt.subplot(gs[1+5])
         TXT4 = plt.subplot(gs[4+5])
         axCBAR = plt.subplot(gs[0:5])
+        #axCBAR.xaxis.set_visible(False)
+        #axCBAR.yaxis.set_visible(False)
 
         # Set up default x and y limits
         print(min(x))
@@ -163,20 +165,27 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ycents = np.diff(ybins)/2.+ybins[:-1]
         #levels = np.logspace(start = np.log10(1e-8), stop = np.log10(np.amax(H.T/float(len(x)))), num = 8)#[1e-1, 5e-2, 2.5e-2, 1.25e-2, 6.25e-3, 3.125e-3, 1.5625e-3, 7.1825e-4]# 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8]
         #/len(out['smas'])
-        cax = ax1.contourf(xcents, ycents, H.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', interpolation='nearest',locator=ticker.LogLocator())#, 
+
+        #Plots the contour lines for ax1
+        cax = ax1.contourf(xcents, ycents, H.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', locator=ticker.LogLocator())#, interpolation='nearest',
+        
         # fmt = ticker.LogFormatterMathtext()
         # plt.clabel(cax, fmt=fmt, colors='k', fontsize=8, inline=1)#OK
         # levels = [1e-8, 1e-6, 1e-4, 1e-2, 1e-1]
         
         CS4 = ax1.contour(cax, colors=('k',), linewidths=(1,), origin='lower', locator=ticker.LogLocator())
-        colorbar_ax = fig2.add_axes([0.125, 0.775, 0.775, 0.025])#[left, bottom, width, height]
-        cbar = fig2.colorbar(cax, cax=colorbar_ax, orientation='horizontal')#pad=0.05,
+        #colorbar_ax = fig2.add_axes([0.125, 0.775, 0.775, 0.025])#[left, bottom, width, height]
+        #axCBAR.axes([0.125, 0.775, 0.775, 0.025])#[left, bottom, width, height]
+        #cbar = 
+        cbar = fig2.colorbar(cax, cax=axCBAR, orientation='horizontal')#pad=0.05,
         plt.rcParams['axes.titlepad']=-10
         #plt.text(0.5, 1, 'Normalized Planet Joint Probability Density', weight='bold', horizontalalignment='center')
         #cbar.ax.set_title(label='Normalized Planet Joint Probability Density', weight='bold')
-        cbar.ax.set_xlabel('Joint Probability Density: Universe (Left) Detected Planets (Right)', weight='bold', labelpad=-35)
+        #cbar.ax
+        axCBAR.set_xlabel('Joint Probability Density: Universe (Left) Detected Planets (Right)', weight='bold', labelpad=-35)
         #cbar.set_label('Normalized Planet Joint Probability Density', weight='bold')#, rotation=270)
-        cbar.ax.tick_params(axis='x',direction='in',labeltop=True,labelbottom=False)#'off'
+        #cbar.ax
+        axCBAR.tick_params(axis='x',direction='in',labeltop=True,labelbottom=False)#'off'
         cbar.add_lines(CS4)
         plt.show(block=False)
         
@@ -184,7 +193,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
 
 
         HDET, xedgesDET, yedgesDET = np.histogram2d(det_smas,det_Rps,bins=(xbins,ybins),normed=True)
-        caxDET = ax4.contourf(xcents,ycents,HDET.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', interpolation='nearest',locator=ticker.LogLocator())
+        caxDET = ax4.contourf(xcents,ycents,HDET.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', locator=ticker.LogLocator())#interpolation='nearest',
         # fmt2 = ticker.LogFormatterMathtext()
         # plt.clabel(caxDET, fmt=fmt2, colors='k', fontsize=8, inline=1)#OK
         #levels2 = [1e-8, 1e-6, 1e-4, 1e-2, 1e-1]
@@ -270,6 +279,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ax4.yaxis.set_major_formatter(nullfmt)
         ax5.xaxis.set_major_formatter(nullfmt)
         ax6.yaxis.set_major_formatter(nullfmt)
+        #axCBAR.xaxis.set_major_formatter(nullfmt)
+        axCBAR.yaxis.set_major_formatter(nullfmt)
         
         #plot the detected planet Rp and a #make this a separate plot... or the same plot..... yess lets use subplots
         #ax1.scatter(det_smas, det_Rps, marker='o', color='red', alpha=0.1)
@@ -281,8 +292,8 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         #plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
         
         #plt.rc('axes', linewidth=0)
-        TXT1.text(0.0, 0.2, 'Num.\nUniverse\nPlanets:\n%s'%("{:,}".format(len(x))), weight='bold', horizontalalignment='left', fontsize=8)
-        TXT4.text(0.0, 0.0, 'Num.\nDetected\nPlanets:\n%s'%("{:,}".format(len(det_Rps))), weight='bold', horizontalalignment='left', fontsize=8)
+        TXT1.text(0.0, 0.15, 'Num.\nUniverse\nPlanets:\n%s'%("{:,}".format(len(x))), weight='bold', horizontalalignment='left', fontsize=8)
+        TXT4.text(0.0, 0.15, 'Num.\nDetected\nPlanets:\n%s'%("{:,}".format(len(det_Rps))), weight='bold', horizontalalignment='left', fontsize=8)
         #TXT1.text(0.1, -0.1, '# Sims\n%s'%("{:,}".format(len(out['Rps']))), weight='bold', horizontalalignment='left', fontsize=8)
         #plt.subplot(gs[1]).axhline(linewidth=0, color="k",alpha=0)
         
@@ -403,3 +414,4 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         x = allres_sma
         y = allres_Rp
         return x,y
+
