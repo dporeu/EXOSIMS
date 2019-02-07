@@ -340,7 +340,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         maxBinVal = 0.
         for i in np.arange(len(Rccents2)):
             for j in np.arange(len(accents2)):
-                lines.append(", ".join(str(acoarse2[i]),str(acoarse2[i+1]),str(Rcoarse2[j]),str(Rcoarse2[j+1]),str(hcoarse2[j,i]/len(out['smas']))))
+                lines.append(", ".join([str(acoarse2[i]),str(acoarse2[i+1]),str(Rcoarse2[j]),str(Rcoarse2[j+1]),str(hcoarse2[j,i]/len(out['smas']))]) + '\n')
                 if hcoarse2[j,i]/len(out['smas']) > maxBinVal:
                     maxBinVal = hcoarse2[j,i]/len(out['smas'])
                     maxBinij = [i,j]
@@ -365,7 +365,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         maxBinVal = 0.
         for i in np.arange(len(Rccents1)):
             for j in np.arange(len(accents1)):
-                lines.append(", ".join(str(acoarse1[i]),str(acoarse1[i+1]),str(Rcoarse1[j]),str(Rcoarse1[j+1]),str(hcoarse1[j,i]/len(out['smas']))))
+                lines.append(", ".join([str(acoarse1[i]),str(acoarse1[i+1]),str(Rcoarse1[j]),str(Rcoarse1[j+1]),str(hcoarse1[j,i]/len(out['smas']))]) + '\n')
                 if hcoarse2[j,i]/len(out['smas']) > maxBinVal:
                     maxBinVal = hcoarse1[j,i]/len(out['smas'])
                     maxBinij = [i,j]
