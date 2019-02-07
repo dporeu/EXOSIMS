@@ -79,7 +79,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         allres = read_all(folder)# contains all drm from all missions in folder
 
         #Convert Extracted Data to x,y
-        x, y =extractXY(out, allres)
+        x, y = self.extractXY(out, allres)
         
         # Define the x and y data for detected planets
         det_Rps = np.concatenate(out['Rps']).ravel() # Planet Radius in Earth Radius of detected planets
@@ -90,12 +90,10 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ymax = np.nanmax(sim.PlanetPhysicalModel.ggdat['radii']).to('earthRad').value
 
 
-
-
         ################ 
         #Create Figure and define gridspec
         fig2 = plt.figure(2, figsize=(8.5,4.5))
-        gs = gridspec.GridSpec(2,5, width_ratios=[6,1,0.3,6,1.25], height_ratios=[1,4])
+        gs = gridspec.GridSpec(3,5, width_ratios=[6,1,0.3,6,1.25], height_ratios=[0.75,1,4])
         gs.update(wspace=0.06, hspace=0.06) # set the spacing between axes. 
         plt.rc('axes',linewidth=2)
         plt.rc('lines',linewidth=2)
@@ -103,40 +101,35 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         plt.rc('font',weight='bold')
 
         #What the plot layout looks like
-        ###----------------------------
-        # | gs[0]  gs[1]  gs[2]  gs[3] |
-        # | gs[4]  gs[5]  gs[6]  gs[7] |
-        ###----------------------------
+        ###-----------------------------------
+        # | gs[0]  gs[1]  gs[2]  gs[3]  gs[4] |
+        # | gs[5]  gs[6]  gs[7]  gs[8]  gs[9] |
+        # | gs[10] gs[11] gs[12] gs[13] gs[14]|
+        ###-----------------------------------
         # ax1 = plt.subplot(gs[4])#2D histogram of planet pop
         # ax2 = plt.subplot(gs[0])#1D histogram of a
         # ax3 = plt.subplot(gs[5])#1D histogram of Rp
         # ax4 = plt.subplot(gs[6])#2D histogram of detected Planet Population
         # ax5 = plt.subplot(gs[2])#1D histogram of detected planet a
         # ax6 = plt.subplot(gs[7])#1D histogram of detected planet Rp
-        ax1 = plt.subplot(gs[5])#2D histogram of planet pop
-        ax2 = plt.subplot(gs[0])#1D histogram of a
-        ax3 = plt.subplot(gs[6])#1D histogram of Rp
-        ax4 = plt.subplot(gs[8])#2D histogram of detected Planet Population
-        ax5 = plt.subplot(gs[3])#1D histogram of detected planet a
-        ax6 = plt.subplot(gs[9])#1D histogram of detected planet Rp
-        TXT1 = plt.subplot(gs[1])
-        TXT4 = plt.subplot(gs[4])
+        ax1 = plt.subplot(gs[5+5])#2D histogram of planet pop
+        ax2 = plt.subplot(gs[0+5])#1D histogram of a
+        ax3 = plt.subplot(gs[6+5])#1D histogram of Rp
+        ax4 = plt.subplot(gs[8+5])#2D histogram of detected Planet Population
+        ax5 = plt.subplot(gs[3+5])#1D histogram of detected planet a
+        ax6 = plt.subplot(gs[9+5])#1D histogram of detected planet Rp
+        TXT1 = plt.subplot(gs[1+5])
+        TXT4 = plt.subplot(gs[4+5])
+        axCBAR = plt.subplot(gs[0:5])
 
         # Set up default x and y limits
+        print(min(x))
         xlims = [min(x),max(x)]# of aPOP
-        ylims = [min(y),max(y)]# of RpPOP
+        ylims = [min(y),ymax]#max(y)]# of RpPOP
         xmin = xlims[0]
         xmax = xlims[1]
         ymin = ylims[0]
         ymax = ylims[1]
-        # Find the min/max of the POP data and APPLY LIMITS
-        #xmin = 0.1#min(xlims)#min of a
-        #xmax = 30#max(xlims)#max of a
-        #ymin = 1#min(ylims)#min of Rp
-        #ymax = 22.6#max(y)#max of Rp
-        
-        #xlims = [xmin, xmax]#sma range
-        #ylims = [ymin, ymax]#Rp range
 
         # Make the 'main' temperature plot
         # Define the number of bins
@@ -170,7 +163,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ycents = np.diff(ybins)/2.+ybins[:-1]
         #levels = np.logspace(start = np.log10(1e-8), stop = np.log10(np.amax(H.T/float(len(x)))), num = 8)#[1e-1, 5e-2, 2.5e-2, 1.25e-2, 6.25e-3, 3.125e-3, 1.5625e-3, 7.1825e-4]# 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8]
         #/len(out['smas'])
-        cax = ax1.contourf(xcents, ycents, H.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', intepolation='nearest',locator=ticker.LogLocator())#, 
+        cax = ax1.contourf(xcents, ycents, H.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', interpolation='nearest',locator=ticker.LogLocator())#, 
         # fmt = ticker.LogFormatterMathtext()
         # plt.clabel(cax, fmt=fmt, colors='k', fontsize=8, inline=1)#OK
         # levels = [1e-8, 1e-6, 1e-4, 1e-2, 1e-1]
@@ -183,13 +176,15 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         #cbar.ax.set_title(label='Normalized Planet Joint Probability Density', weight='bold')
         cbar.ax.set_xlabel('Joint Probability Density: Universe (Left) Detected Planets (Right)', weight='bold', labelpad=-35)
         #cbar.set_label('Normalized Planet Joint Probability Density', weight='bold')#, rotation=270)
-        cbar.ax.tick_params(axis='x',direction='in',labeltop='on',labelbottom='off')
+        cbar.ax.tick_params(axis='x',direction='in',labeltop=True,labelbottom=False)#'off'
         cbar.add_lines(CS4)
+        plt.show(block=False)
         
+        #print saltyburrito
 
 
         HDET, xedgesDET, yedgesDET = np.histogram2d(det_smas,det_Rps,bins=(xbins,ybins),normed=True)
-        caxDET = ax4.contourf(xcents,ycents,HDET.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', intepolation='nearest',locator=ticker.LogLocator())
+        caxDET = ax4.contourf(xcents,ycents,HDET.T, extent=[xmin, xmax, ymin, ymax], cmap='jet', interpolation='nearest',locator=ticker.LogLocator())
         # fmt2 = ticker.LogFormatterMathtext()
         # plt.clabel(caxDET, fmt=fmt2, colors='k', fontsize=8, inline=1)#OK
         #levels2 = [1e-8, 1e-6, 1e-4, 1e-2, 1e-1]
@@ -210,9 +205,9 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         ax6.set_yscale('log')
 
         #Plot the axes labels
-        ax1.set_xlabel('Universe Pop.\nSemi-Major Axis ($a$) in $AU$',weight='bold', multialignment='center')
-        ax1.set_ylabel('Planet Radius ($R_{p}$) in $R_{\oplus}$',weight='bold', multialignment='center')
-        ax4.set_xlabel('Detected Planet Pop.\nSemi-Major Axis ($a$) in $AU$',weight='bold', multialignment='center')
+        ax1.set_xlabel('Universe Pop.\nSemi-Major Axis, $a$, in ($AU$)',weight='bold', multialignment='center')
+        ax1.set_ylabel('Planet Radius $R_{p}$, in ($R_{\oplus}$)',weight='bold', multialignment='center')
+        ax4.set_xlabel('Detected Planet Pop.\nSemi-Major Axis, $a$, in ($AU$)',weight='bold', multialignment='center')
 
         #Set up the histogram bins
         xbins = np.logspace(start = np.log10(xmin), stop = np.log10(xmax), num = nxbins)
@@ -223,31 +218,31 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         #Plot the universe planet pop histograms
         #*note len(out) should equal len(all_res)
         #ax2
-        n2, bins2, patches2 = plt.subplot(gs[5]).hist(x, bins=xbins, color = 'black', fill='black', histtype='step',normed=True)#, hatch='-/')#1D histogram of universe a
+        n2, bins2, patches2 = plt.subplot(gs[4+5]).hist(x, bins=xbins, color = 'black', alpha=0., histtype='step',density=True)#, hatch='-/')#1D histogram of universe a
         center2 = (bins2[:-1] + bins2[1:]) / 2
         width2=np.diff(bins2)
         ax2.bar(center2, n2*(len(x)/float(len(out['smas']))), align='center', width=width2, color='black', fill='black')
         #ax5
-        n5, bins5, patches5 = plt.subplot(gs[5]).hist(det_smas, bins=xbins, color = 'black', fill='black', histtype='step',normed=True)#, hatch='+x')#1D histogram of detected planet a
+        n5, bins5, patches5 = plt.subplot(gs[4+5]).hist(det_smas, bins=xbins, color = 'black', alpha=0., histtype='step',density=True)#, hatch='+x')#1D histogram of detected planet a
         center5 = (bins5[:-1] + bins5[1:]) / 2
         width5=np.diff(bins5)
         ax5.bar(center5, n5*(len(det_smas)/float(len(out['smas']))), align='center', width=width5, color='black', fill='black')
         #ax3
-        n3, bins3, patches3 = plt.subplot(gs[5]).hist(y, bins=ybins, color = 'black', fill='black', histtype='step',normed=True)#, hatch='+x')#1D histogram of detected planet a
+        n3, bins3, patches3 = plt.subplot(gs[4+5]).hist(y, bins=ybins, color = 'black', alpha=0., histtype='step',density=True)#, hatch='+x')#1D histogram of detected planet a
         center3 = (bins3[:-1] + bins3[1:]) / 2
         width3=np.diff(bins3)
         ax3.barh(center3, n3*(len(y)/float(len(out['Rps']))), width3, align='center', color='black')
         #ax3.barh(y=center3, width=width3, height=n3*(len(det_Rps)/float(len(out['Rps']))), align='center', color='black')#, fill='black')#, orientation='horizontal')
         #ax3.hist(y, bins=ybins, orientation='horizontal', color = 'black', fill='black', histtype='step')#, hatch='///')#1D histogram of detected planet a
         #ax6
-        n6, bins6, patches6 = plt.subplot(gs[5]).hist(det_Rps, bins=ybins, color = 'black', fill='black', histtype='step',normed=True)#, hatch='+x')#1D histogram of detected planet a
+        n6, bins6, patches6 = plt.subplot(gs[4+5]).hist(det_Rps, bins=ybins, color = 'black', alpha=0., histtype='step',density=True)#, hatch='+x')#1D histogram of detected planet a
         center6 = (bins6[:-1] + bins6[1:]) / 2
         width6=np.diff(bins6)
         ax6.barh(center6, n6*(len(det_Rps)/float(len(out['Rps']))), width6, align='center', color='black')#, fill='black')#, orientation='horizontal')
         #ax6.hist(det_Rps, bins=ybins, orientation='horizontal', color = 'black', fill='black', histtype='step')#, hatch='x')#1D histogram of detected planet Rp
-        ax2.set_ylabel(r'$\frac{a\ Freq.}{1000\ sims}$',weight='bold', multialignment='center')
-        ax3.set_xlabel(r'$\frac{R_P\ Freq.}{1000\ sims}$',weight='bold', multialignment='center')
-        ax6.set_xlabel(r'$\frac{R_P\ Freq.}{1000\ sims}$',weight='bold', multialignment='center')
+        ax2.set_ylabel(r'$\frac{{a\ Freq.}}{{{}\ sims}}$'.format(len(out['Rps'])),weight='bold', multialignment='center')
+        ax3.set_xlabel(r'$\frac{{R_P\ Freq.}}{{{}\ sims}}$'.format(len(out['Rps'])),weight='bold', multialignment='center')
+        ax6.set_xlabel(r'$\frac{{R_P\ Freq.}}{{{}\ sims}}$'.format(len(out['Rps'])),weight='bold', multialignment='center')
 
         #Set plot limits
         ax1.set_xlim(xlims)
@@ -278,25 +273,29 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         
         #plot the detected planet Rp and a #make this a separate plot... or the same plot..... yess lets use subplots
         #ax1.scatter(det_smas, det_Rps, marker='o', color='red', alpha=0.1)
-        plt.gcf().subplots_adjust(bottom=0.15, top=0.75)
         #plt.tight_layout({"pad":.0})
         #plt.axis('tight')
+
+        fig2.subplots_adjust(bottom=0.15, top=0.75)
         
         #plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-        plt.rc('axes', linewidth=0)
-        TXT1.text(0.5, 0.4, '# Universe\nPlanets:\n%s'%("{:,}".format(len(x))), weight='bold', horizontalalignment='center', fontsize=8)
-        TXT4.text(0.5, 0.0, '# Detected\nPlanets:\n%s'%("{:,}".format(len(det_Rps))), weight='bold', horizontalalignment='center', fontsize=8)
-        TXT1.text(0.5, -0.1, '# Sims\n%s'%("{:,}".format(len(out['Rps']))), weight='bold', horizontalalignment='center', fontsize=8)
+        
+        #plt.rc('axes', linewidth=0)
+        TXT1.text(0.0, 0.2, 'Num.\nUniverse\nPlanets:\n%s'%("{:,}".format(len(x))), weight='bold', horizontalalignment='left', fontsize=8)
+        TXT4.text(0.0, 0.0, 'Num.\nDetected\nPlanets:\n%s'%("{:,}".format(len(det_Rps))), weight='bold', horizontalalignment='left', fontsize=8)
+        #TXT1.text(0.1, -0.1, '# Sims\n%s'%("{:,}".format(len(out['Rps']))), weight='bold', horizontalalignment='left', fontsize=8)
         #plt.subplot(gs[1]).axhline(linewidth=0, color="k",alpha=0)
-        plt.setp(TXT1.spines.values(),linewidth=0)
-        plt.setp(TXT4.spines.values(),linewidth=0)
+        
+        TXT1.axis('off')
+        TXT4.axis('off')
+        # plt.setp(TXT1.spines.values(),linewidth=0)
+        # plt.setp(TXT4.spines.values(),linewidth=0)
         TXT1.xaxis.set_visible(False)
         TXT1.yaxis.set_visible(False)
         TXT4.xaxis.set_visible(False)
         TXT4.yaxis.set_visible(False)
         #plt.subplot(gs[4]).axhline(linewidth=0, color="k",alpha=0)
 
-        #show(block=False)
         # Save to a File
         date = unicode(datetime.datetime.now())
         date = ''.join(c + '_' for c in re.split('-|:| ',date)[0:-1])#Removes seconds from date
@@ -322,7 +321,7 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         accents1 = np.sqrt(acoarse1[:-1]*acoarse1[1:])
         Rccents1 = np.sqrt(Rcoarse1[:-1]*Rcoarse1[1:]) 
 
-        for i in range(len(Rccents1)):
+        for i in np.arange(len(Rccents1)):
             for j in range(len(accents1)):
                 tmp1 = ax4.text(accents1[j],Rccents1[i],u'%2.2f'%(hcoarse1[j,i]/len(out['smas'])),horizontalalignment='center',verticalalignment='center',weight='bold', color='white', fontsize=8)
                 tmp1.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='k')])
@@ -335,16 +334,16 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         hcoarse2 = np.histogram2d(np.hstack(x), np.hstack(y),bins=[acoarse2,Rcoarse2],normed=False)[0]
 
         for R in Rcoarse2:
-            ax1.plot(xlims,[R]*2,'k--')
+            ax1.loglog(xlims,[R]*2,'k--')
 
         for a in acoarse2:
-            ax1.plot([a]*2,ylims,'k--')
+            ax1.loglog([a]*2,ylims,'k--')
 
         accents2 = np.sqrt(acoarse2[:-1]*acoarse2[1:])
         Rccents2 = np.sqrt(Rcoarse2[:-1]*Rcoarse2[1:]) 
 
-        for i in range(len(Rccents2)):
-            for j in range(len(accents2)):
+        for i in np.arange(len(Rccents2)):
+            for j in np.arange(len(accents2)):
                 tmp2 = ax1.text(accents2[j],Rccents2[i],u'%2.2f'%(hcoarse2[j,i]/len(out['smas'])),horizontalalignment='center',verticalalignment='center',weight='bold', color='white', fontsize=8)
                 tmp2.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='k')])
 
@@ -358,6 +357,33 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'), bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'), format='eps', dpi=500, bbox_inches='tight')
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'), format='pdf', dpi=500, bbox_inches='tight')
+        plt.show(block=False)
+
+
+        ###### Write Data File On This Plot
+        lines = []
+        # Universe Plot Limits
+        lines.append('Universe plot xmin (AU): ' + str(xlims[0]) + '\n')
+        lines.append('Universe plot xmax (AU): ' + str(xlims[1]) + '\n')
+        lines.append('Universe plot ymin (Re): ' + str(ylims[0]) + '\n')
+        lines.append('Universe plot ymax (Re): ' + str(ylims[1]) + '\n')
+        lines.append('Universe plot xmin (AU): ' + str(xlims[0]) + '\n')
+        lines.append('Universe plot xmax (AU): ' + str(xlims[1]) + '\n')
+        lines.append('Universe plot ymin (Re): ' + str(ylims[0]) + '\n')
+        lines.append('Universe plot ymax (Re): ' + str(ylims[1]) + '\n')
+
+        # 
+
+        # Detected Planet Population Limits
+        lines.append('Universe plot xmin (AU): ' + str(xlims[0]) + '\n')
+        lines.append('Universe plot xmax (AU): ' + str(xlims[1]) + '\n')
+        lines.append('Universe plot ymin (Re): ' + str(ylims[0]) + '\n')
+        lines.append('Universe plot ymax (Re): ' + str(ylims[1]) + '\n')
+        lines.append('Universe plot xmin (AU): ' + str(xlims[0]) + '\n')
+        lines.append('Universe plot xmax (AU): ' + str(xlims[1]) + '\n')
+        lines.append('Universe plot ymin (Re): ' + str(ylims[0]) + '\n')
+        lines.append('Universe plot ymax (Re): ' + str(ylims[1]) + '\n')
+
 
         del out
         del allres
