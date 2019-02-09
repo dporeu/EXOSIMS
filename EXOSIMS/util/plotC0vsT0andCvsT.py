@@ -58,6 +58,7 @@ from EXOSIMS.util.vprint import vprint
 from scipy.optimize import minimize,minimize_scalar
 from matplotlib.ticker import NullFormatter, MaxNLocator
 import matplotlib.gridspec as gridspec
+#from EXOSIMS.SurveySimulation import array_encoder
 
 class plotC0vsT0andCvsT(object):
     """Designed to plot Planned Completeness and Observed Completeness
@@ -183,7 +184,7 @@ class plotC0vsT0andCvsT(object):
 
             #Plot t0 vs c0
             #scatter(initt0.value, comp0, label='SLSQP $C_0$ ALL')
-            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$C_0$,' + '' + r'$\sum C_0$' + "=%0.2f"%sumComp0, alpha=0.5, color='blue')
+            ax2.scatter(initt0[initt0.value > 1e-10].value, comp0[initt0.value > 1e-10], label=r'$c_{0,i}$,' + '' + r'$\sum c_{0,i}$' + "=%0.2f"%sumComp0, alpha=0.5, color='blue', zorder=2)
 
             #This is a calculation check to ensure the targets at less than 1e-10 d are trash
             sIndsLT1us = np.arange(TL.nStars)[initt0.value < 1e-10]
@@ -208,10 +209,6 @@ class plotC0vsT0andCvsT(object):
         star_inds = [DRM['DRM'][i]['star_ind'] for i in np.arange(len(DRM['DRM']))]
         sumOHTIME = outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime'].value
         raw_det_time = [DRM['DRM'][i]['det_time'].value for i in np.arange(len(DRM['DRM']))]#DOES NOT INCLUDE overhead time
-        # print(sum(initt0[initt0.value>0].value))
-        # print(sum(np.asarray(raw_det_time)))
-        # print(initt0[initt0.value>0].value - np.asarray(raw_det_time))
-        # print(np.mean(initt0[initt0.value>0].value - np.asarray(raw_det_time)))
         det_times = [DRM['DRM'][i]['det_time'].value+sumOHTIME for i in np.arange(len(DRM['DRM']))]#includes overhead time
         det_timesROUNDED = [round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1) for i in np.arange(len(DRM['DRM']))]
         ObsNums = [DRM['DRM'][i]['ObsNum'] for i in np.arange(len(DRM['DRM']))]
@@ -249,7 +246,7 @@ class plotC0vsT0andCvsT(object):
         ylims = [10.**-6, 1.1*max(comps)]
         #if not plt.get_fignums(): # there is no figure open
         #    plt.figure()
-        ax2.scatter(raw_det_time, comps, label=r'$C_{t_{Obs}}$,' + '' + r'$\sum C_{t_{Obs}}$' + "=%0.2f"%sumComps, alpha=0.5, color='black')
+        ax2.scatter(raw_det_time, comps, label=r'$c_{t_{Obs},i}$,' + '' + r'$\sum c_{t_{Obs},i}$' + "=%0.2f"%sumComps, alpha=0.5, color='black', zorder=2)
         ax2.set_xlim(xlims)
         ax2.set_ylim(ylims)
         ax2.set_xlabel(r'Integration Time, $\tau_i$, in (days)',weight='bold')
@@ -294,7 +291,9 @@ class plotC0vsT0andCvsT(object):
         vprint(-2.5*np.log10(ZL.fZ0.value)) # This is 23
         vprint(-2.5*np.log10(np.mean(fZ).value))
 
-        self.writeDATAtoFile(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date)
+        
+
+
 
         ###### Plot C vs T Lines
         #self.plotCvsTlines(TL, Obs, TK, OS, SS, ZL, sim, COMP, PPoutpath, folder, date, ax2)
@@ -328,7 +327,7 @@ class plotC0vsT0andCvsT(object):
         #Plot Top 10 black Lines
         compObs = COMP.comp_per_intTime(sim.SurveySimulation.t0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
         compObs2 = np.asarray([gg for gg in compObs if gg > 0.])
-        tmpI = np.asarray([gg for gg in sInds if compObs[gg] > 0.])
+        tmpI = np.asarray([gg for gg in sInds if compObs[gg] > 0.]) #Inds of sInds with positive Complateness
         maxCI = np.argmax(compObs) # should return ind of max C0
         minCI = tmpI[np.argmin(compObs2)] # should return ind of min C0
         tmpI2 = np.argsort(compObs)[-10:]
@@ -381,22 +380,27 @@ class plotC0vsT0andCvsT(object):
             CtMaxCbyT = COMP.comp_per_intTime(tMaxCbyT*u.d, TL, ind, fZ, fEZ, WA, mode, tCb[0], tCsp[0])
             #ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
             return tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT
-        ax2.scatter(10**0.,-1.,marker='x',color='red',zorder=3,label=r'$C_{\Delta mag_{lim}}$')
-        ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $C/\tau$')
+        ax2.scatter(10**0.,-1.,marker='o',facecolors='white', edgecolors='black',zorder=3,label=r'$c_{\Delta mag_{lim}}$')
+        ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $c_i/\tau_i$')
         plt.show(block=False)
 
-        tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT = plotSpecialPoints(maxCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
-        ax2.scatter(tdMaglim,Cdmaglim,marker='x',color='red',zorder=3)
-        ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
+
+        #tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT = plotSpecialPoints(maxCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
+        #ax2.scatter(tdMaglim,Cdmaglim,marker='o',facecolors='white', edgecolors='black',zorder=3)
+        #ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
+        for l in np.arange(10):
+            tmptdMaglim, tmpCdmaglim, tmptMaxCbyT, tmpCtMaxCbyT = plotSpecialPoints(tmpI2[l], TL, OS, fZ, fEZ, COMP, WA, mode, sim)
+            ax2.scatter(tmptdMaglim,tmpCdmaglim,marker='o',facecolors='white', edgecolors='black',zorder=3)
+            ax2.scatter(tmptMaxCbyT,tmpCtMaxCbyT,marker='D',color='blue',zorder=3)
         tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT = plotSpecialPoints(middleCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
-        ax2.scatter(tdMaglim,Cdmaglim,marker='x',color='red',zorder=3)
+        ax2.scatter(tdMaglim,Cdmaglim,marker='o',facecolors='white', edgecolors='black',zorder=3)
         ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
         tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT = plotSpecialPoints(minCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
-        ax2.scatter(tdMaglim,Cdmaglim,marker='x',color='red',zorder=3)
+        ax2.scatter(tdMaglim,Cdmaglim,marker='o',facecolors='white', edgecolors='black',zorder=3)
         ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
         plt.show(block=False)
 
-        ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $C_{i}(\tau)$',zorder=1)
+        ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $c_{i}(\tau)$',zorder=1)
         ax2.legend(loc=2)
         ax2.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
         ax0.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
@@ -471,118 +475,57 @@ class plotC0vsT0andCvsT(object):
         #self.plotTauHist()
         #self.plotCompHist()
 
-        plt.close('all')
+        plt.close('all')#required before next plotting utility runs
 
-    def writeDATAtoFile(self, initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date):
+        outspec = sim.SurveySimulation.genOutSpec()
+
+        OBdurations = np.asarray(outspec['OBendTimes'])-np.asarray(outspec['OBstartTimes'])
+        self.writeDATAtoFile(initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
+            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds)
+        #end main
+
+    def writeDATAtoFile(self, initt0, numObs0, sumOHTIME, raw_det_time, PPoutpath, folder, date, outspec, sim,\
+            tmpI, maxCI, minCI, tmpI2, middleCI, comp0, DRM, star_inds):
         ############################################
         #### Calculate Lines for Data Output
         lines = []
-        lines.append('Sum Planned Integration Time: ' + str(sum(initt0[initt0.value>1e-10])))
-        lines.append('Number Planned Observations: ' + str(numObs0))
+        lines.append('Planned Sum Integration Time: ' + str(sum(initt0[initt0.value>1e-10])))
+        lines.append('Planned Number Observations: ' + str(numObs0))
         lines.append('Planned Tsettling+Toh: ' + str(numObs0*sumOHTIME))
         RDT = [rdt for rdt in raw_det_time if rdt>1e-10]
         sumrdt = sum(RDT)
-        lines.append('Sum Obs Integration Time: ' + str(sumrdt))
-        lines.append('Number Obs Made: ' + str(len(RDT)))
+        lines.append('Obs Sum Integration Time: ' + str(sumrdt))
+        lines.append('Obs Number Made: ' + str(len(RDT)))
         lines.append('Obs Tsettling+Toh: ' + str(len(RDT)*sumOHTIME))
+
+        #Dump Outspec
+        lines.append(json.dumps(outspec,sort_keys=True, indent=4, ensure_ascii=False,
+                        separators=(',', ': '), default=array_encoder))
+
+        #Dump Actual DRM
+        sumOHTIME = outspec['settlingTime'] + outspec['starlightSuppressionSystems'][0]['ohTime']
+        DRMactual = [', '.join([str(DRM['DRM'][i]['arrival_time'].value),\
+                                str(DRM['DRM'][i]['star_ind']),\
+                                str(DRM['DRM'][i]['det_time'].value),\
+                                str(DRM['DRM'][i]['det_time'].value+sumOHTIME),\
+                                str(round(DRM['DRM'][i]['det_time'].value+sumOHTIME,1)),\
+                                str(DRM['DRM'][i]['ObsNum']),\
+                                str(DRM['DRM'][i]['char_time'].value*(1.+outspec['charMargin'])+sumOHTIME)\
+                                ]) for i in np.arange(len(DRM['DRM']))]
+        lines.append('\n'.join(DRMactual))
+
+        lines.append('Seed: ' + str(DRM['seed']) + '\n')
+
+        listOfAtts = sim.SurveySimulation.TargetList.catalog_atts
+        lines.append(', '.join(['sInd'] + listOfAtts + ['Observed'] + ['initt0'] + ['comp0']))
+        for i in np.arange(len(tmpI)):
+            lines.append(', '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]])] + [str(comp0[tmpI[i]])]))
+
 
         #### Save Data File
         fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
         with open(os.path.join(PPoutpath, fname + '.txt'), 'w') as g:
             g.write("\n".join(lines))
-
-    def plotCvsTlines(self, TL, Obs, TK, OS, SS, ZL, sim, COMP, PPoutpath, folder, date, ax2):
-        """ Plots CvsT with Lines
-        #From starkAYO_staticSchedule_withPlotting_copy_Feb6_2018.py
-        #Lines 1246-1313, 1490-1502
-        """
-        sInds = np.arange(TL.nStars)
-        mode = filter(lambda mode: mode['detectionMode'] == True, OS.observingModes)[0]
-        fZ, fZabsTime = ZL.calcfZmin(sInds, Obs, TL, TK, mode, SS.cachefname)
-        fEZ = ZL.fEZ0
-        WA = OS.WA0
-        dmag = np.linspace(1, COMP.dMagLim, num=1500,endpoint=True)
-        Cp = np.zeros([sInds.shape[0],dmag.shape[0]])
-        Cb = np.zeros(sInds.shape[0])
-        Csp = np.zeros(sInds.shape[0])
-        for i in xrange(dmag.shape[0]):
-            Cp[:,i], Cb[:], Csp[:] = OS.Cp_Cb_Csp(TL, sInds, fZ, fEZ, dmag[i], WA, mode)
-        Cb = Cb[:]#Cb[:,0]/u.s#note all Cb are the same for different dmags. They are just star dependent
-        Csp = Csp[:]#Csp[:,0]/u.s#note all Csp are the same for different dmags. They are just star dependent
-        #self.Cp = Cp[:,:] #This one is dependent upon dmag and each star
-        
-        cmap = plt.cm.get_cmap('autumn_r')
-        intTimes = np.logspace(-6,3,num=400,base=10.0)#define integration times we will evaluate at
-        actualComp = np.zeros([sInds.shape[0],intTimes.shape[0]])
-        for j in np.arange(intTimes.shape[0]):
-            actualComp[:,j] = COMP.comp_per_intTime((intTimes[j]+np.zeros([sInds.shape[0]]))*u.d, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)
-        
-        #Plot Top 10 black Lines
-        compObs = COMP.comp_per_intTime(sim.SurveySimulation.t0, TL, sInds, fZ, fEZ, WA, mode, Cb/u.s, Csp/u.s)#integration time at t0
-        compObs2 = np.asarray([gg for gg in compObs if gg > 0.])
-        tmpI = np.asarray([gg for gg in sInds if compObs[gg] > 0.])
-        maxCI = np.argmax(compObs) # should return ind of max C0
-        minCI = tmpI[np.argmin(compObs2)] # should return ind of min C0
-        tmpI2 = np.argsort(compObs)[-10:]
-        middleCI = compObs.tolist().index(np.percentile(compObs2,50,interpolation='nearest'))
-
-        for l in np.arange(10):
-            ax2.plot(intTimes,actualComp[tmpI2[l],:],color='k',zorder=1)
-        ax2.plot(intTimes,actualComp[middleCI,:],color='k',zorder=1)
-        ax2.plot(intTimes,actualComp[minCI,:],color='k',zorder=1)
-        ###############################
-
-        #ax2.set_xscale('log')
-        #plt.rcParams['axes.linewidth']=2
-        #plt.rc('font',weight='bold') 
-        #plt.title('Generic Title I Forgot to Update',weight='bold')
-        #plt.xlabel(r'Integration Time, $\tau$ (days)',weight='bold',fontsize=14)
-        #plt.ylabel('Completeness',weight='bold',fontsize=14)
-        #plt.rc('axes',linewidth=2)
-        #plt.rc('lines',linewidth=2)
-        #Plot Colorbar
-        cmap = plt.cm.get_cmap('autumn_r')
-
-        compatt0 = np.zeros([sInds.shape[0]])
-        for j in np.arange(sInds.shape[0]):
-            compatt0[j] = COMP.comp_per_intTime(sim.SurveySimulation.t0[j], TL, sInds[j], fZ[j], fEZ, WA, mode, Cb[j]/u.s, Csp[j]/u.s)
-        ax2.scatter(sim.SurveySimulation.t0,compatt0,color='k',marker='o',zorder=3,label=r'$C_{i}(\tau_{0})$')
-
-
-        def plotSpecialPoints(ind, TL, OS, fZ, fEZ, COMP, WA, mode, sim):
-            #### Plot Top Performer at dMagLim, max(C/t)
-            tCp, tCb, tCsp = OS.Cp_Cb_Csp(TL, ind, fZ[ind], fEZ, COMP.dMagLim, WA, mode)
-            tdMaglim = OS.calc_intTime(TL, ind, fZ[ind], fEZ, COMP.dMagLim, WA, mode)
-            Cdmaglim = COMP.comp_per_intTime(tdMaglim, TL, ind, fZ[ind], fEZ, WA, mode, tCb[0], tCsp[0])
-            ax2.scatter(tdMaglim,Cdmaglim,marker='x',color='red',zorder=3)
-
-            def objfun(t, TL, tmpI, fZ, fEZ, WA, mode, OS):
-                dmag = OS.calc_dMag_per_intTime(t*u.d, TL, tmpI, fZ, fEZ, WA, mode)#We must calculate a different dmag for each integraiton time
-                Cp, Cb, Csp = OS.Cp_Cb_Csp(TL, tmpI, fZ, fEZ, dmag, WA, mode)#We must recalculate Cb and Csp at each dmag
-                return -COMP.comp_per_intTime(t*u.d, TL, tmpI, fZ, fEZ, WA, mode, Cb, Csp)/t
-
-            out = minimize_scalar(objfun,method='bounded',bounds=[0,10**3.], args=(TL, ind, fZ[ind], fEZ, WA, mode, OS))#, options={'disp': 3, 'xatol':self.ftol, 'maxiter': self.maxiter}) 
-            tMaxCbyT = out['x']
-            CtMaxCbyT = COMP.comp_per_intTime(tMaxCbyT*u.d, TL, ind, fZ[ind], fEZ, WA, mode, tCb[0], tCsp[0])
-            ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
-        ax2.scatter(10**0.,-1.,marker='x',color='red',zorder=3,label=r'$C_{\Delta mag_{lim}}$')
-        ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $C/\tau$')
-
-        plotSpecialPoints(maxCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
-        plotSpecialPoints(middleCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
-        plotSpecialPoints(minCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
-
-        plt.gca()
-        ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $C_{i}(\tau)$',zorder=1)
-        ax2.legend(loc=2)
-        ax2.set_xlim([1e-6,10.*max(sim.SurveySimulation.t0.value)])
-        ax2.set_ylim([1e-6,1.1*max(compatt0)])
-        plt.show(block=False)
-        fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
-        plt.savefig(os.path.join(PPoutpath, fname + '.png'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
-        plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
     def multiRunPostProcessing(self, PPoutpath, folders):
         """Does Nothing
@@ -600,3 +543,54 @@ class plotC0vsT0andCvsT(object):
         assert len(files) > 0, 'There are no files in %s' %(folder)
         assert any('.pkl' in mystring for mystring in files), 'no files in folder are .pkl'
         return random.choice([file for file in files if '.pkl' in file])
+
+def array_encoder(obj):
+    r"""Encodes numpy arrays, astropy Times, and astropy Quantities, into JSON.
+    
+    Called from json.dump for types that it does not already know how to represent,
+    like astropy Quantity's, numpy arrays, etc.  The json.dump() method encodes types
+    like integers, strings, and lists itself, so this code does not see these types.
+    Likewise, this routine can and does return such objects, which is OK as long as 
+    they unpack recursively into types for which encoding is known.th
+    
+    """
+    
+    from astropy.time import Time
+    from astropy.coordinates import SkyCoord
+    if isinstance(obj, Time):
+        # astropy Time -> time string
+        return obj.fits # isot also makes sense here
+    if isinstance(obj, u.quantity.Quantity):
+        # note: it is possible to have a numpy ndarray wrapped in a Quantity.
+        # NB: alternatively, can return (obj.value, obj.unit.name)
+        return obj.value
+    if isinstance(obj, SkyCoord):
+        return dict(lon=obj.heliocentrictrueecliptic.lon.value,
+                    lat=obj.heliocentrictrueecliptic.lat.value,
+                    distance=obj.heliocentrictrueecliptic.distance.value)
+    if isinstance(obj, (np.ndarray, np.number)):
+        # ndarray -> list of numbers
+        return obj.tolist()
+    if isinstance(obj, (complex, np.complex)):
+        # complex -> (real, imag) pair
+        return [obj.real, obj.imag]
+    if callable(obj):
+        # this case occurs for interpolants like PSF and QE
+        # We cannot simply "write" the function to JSON, so we make up a string
+        # to keep from throwing an error.
+        # The fix is simple: when generating the interpolant, add a _outspec attribute
+        # to the function (or the lambda), containing (e.g.) the fits filename, or the
+        # explicit number -- whatever string was used.  Then, here, check for that 
+        # attribute and write it out instead of this dummy string.  (Attributes can
+        # be transparently attached to python functions, even lambda's.)
+        return 'interpolant_function'
+    if isinstance(obj, set):
+        return list(obj)
+    if isinstance(obj, bytes):
+        return obj.decode()
+    # an EXOSIMS object
+    if hasattr(obj, '_modtype'):
+        return obj.__dict__
+    # an object for which no encoding is defined yet
+    #   as noted above, ordinary types (lists, ints, floats) do not take this path
+    raise ValueError('Could not JSON-encode an object of type %s' % type(obj))
