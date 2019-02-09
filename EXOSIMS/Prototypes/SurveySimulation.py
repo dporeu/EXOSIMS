@@ -1723,6 +1723,7 @@ class SurveySimulation(object):
                         inspect.getfile(module.__class__))
             out['modules'][mod_name] = mod_name_short
         # add catalog name
+        assert(isinstance(self.StarCatalog,str), "StarCatalog in spec is not a string") # assert it is a string
         out['modules']['StarCatalog'] = self.StarCatalog
         
         # add in the SVN/Git revision
