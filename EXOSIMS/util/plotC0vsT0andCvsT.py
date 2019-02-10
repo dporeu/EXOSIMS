@@ -278,7 +278,7 @@ class plotC0vsT0andCvsT(object):
         plt.savefig(os.path.join(PPoutpath, fname + '.eps'))
         plt.savefig(os.path.join(PPoutpath, fname + '.pdf'))
 
-        plt.show(block=False)
+        #plt.show(block=False)
 
         ax0.set_ylabel(r'$\frac{{\tau_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
         ax3.set_xlabel(r'$\frac{{c_i\ Freq.}}{{{}\ Targets}}$'.format(numObs0),weight='bold', multialignment='center')
@@ -337,7 +337,7 @@ class plotC0vsT0andCvsT(object):
             ax2.plot(intTimes,actualComp[tmpI2[l],:],color='k',zorder=1)
         ax2.plot(intTimes,actualComp[middleCI,:],color='k',zorder=1)
         ax2.plot(intTimes,actualComp[minCI,:],color='k',zorder=1)
-        plt.show(block=False)
+        #plt.show(block=False)
         ###############################
 
         #ax2.set_xscale('log')
@@ -382,7 +382,7 @@ class plotC0vsT0andCvsT(object):
             return tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT
         ax2.scatter(10**0.,-1.,marker='o',facecolors='white', edgecolors='black',zorder=3,label=r'$c_{\Delta mag_{lim}}$')
         ax2.scatter(10**0.,-1.,marker='D',color='blue',zorder=3,label=r'Max $c_i/\tau_i$')
-        plt.show(block=False)
+        #plt.show(block=False)
 
 
         #tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT = plotSpecialPoints(maxCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
@@ -398,7 +398,7 @@ class plotC0vsT0andCvsT(object):
         tdMaglim, Cdmaglim, tMaxCbyT, CtMaxCbyT = plotSpecialPoints(minCI, TL, OS, fZ, fEZ, COMP, WA, mode, sim)
         ax2.scatter(tdMaglim,Cdmaglim,marker='o',facecolors='white', edgecolors='black',zorder=3)
         ax2.scatter(tMaxCbyT,CtMaxCbyT,marker='D',color='blue',zorder=3)
-        plt.show(block=False)
+        #plt.show(block=False)
 
         ax2.plot([1e-5,1e-5],[0,0],color='k',label=r'Numerical $c_{i}(\tau)$',zorder=1)
         ax2.legend(loc=2)
@@ -407,7 +407,7 @@ class plotC0vsT0andCvsT(object):
         ax2.set_ylim([1e-6,1.1*max(compatt0)])
         ax3.set_ylim([1e-6,1.1*max(compatt0)])
 
-        plt.show(block=False)
+        #plt.show(block=False)
         fname = 'CvsTlines_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
         plt.savefig(os.path.join(PPoutpath, fname + '.svg'))
@@ -458,13 +458,13 @@ class plotC0vsT0andCvsT(object):
         n0, bins0, patches0 = plt.subplot(gs[1]).hist(x, bins=xbins, color = 'black', alpha = 0., fill='black', histtype='step')#,normed=True)#, hatch='-/')#1D histogram of universe a
         center0 = (bins0[:-1] + bins0[1:]) / 2.
         width0=np.diff(bins0)
-        ax0.bar(x=center0, height=n0/float(numObs0), align='center', width=width0, color='black', fill='black')
+        ax0.bar(center0, n0/float(numObs0), align='center', width=width0, color='black', fill='black')
 
         n3, bins3, patches3 = plt.subplot(gs[1]).hist(y, bins=ybins, color = 'black', alpha = 0., fill='black', histtype='step')#,normed=True)#, hatch='-/')#1D histogram of universe a
         center3 = (bins3[:-1] + bins3[1:]) / 2.
         width3=np.diff(bins3)
-        ax3.barh(y=center3, width=np.asarray(n3/float(numObs0)), align='center', height=width3, color='black', fill='black')
-        plt.show(block=False)
+        ax3.barh(center3, np.asarray(n3/float(numObs0)), align='center', height=width3, color='black', fill='black')
+        #plt.show(block=False)
 
         fname = 'CvsTlinesAndHists_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))
@@ -512,15 +512,22 @@ class plotC0vsT0andCvsT(object):
                                 str(DRM['DRM'][i]['ObsNum']),\
                                 str(DRM['DRM'][i]['char_time'].value*(1.+outspec['charMargin'])+sumOHTIME)\
                                 ]) for i in np.arange(len(DRM['DRM']))]
+        lines.append('arrival_time, star_ind, det_time, det_time+sumOHtime, det_time+sumOHTimerounded, ObsNum, totalCharTime\n')
         lines.append('\n'.join(DRMactual))
 
         lines.append('Seed: ' + str(DRM['seed']) + '\n')
 
-        listOfAtts = sim.SurveySimulation.TargetList.catalog_atts
-        lines.append(', '.join(['sInd'] + listOfAtts + ['Observed'] + ['initt0'] + ['comp0']))
+        sim.SurveySimulation.TargetList.ra = sim.SurveySimulation.TargetList.coords.ra
+        sim.SurveySimulation.TargetList.dec = sim.SurveySimulation.TargetList.coords.dec
+        sim.SurveySimulation.TargetList.distance = sim.SurveySimulation.TargetList.coords.distance
+        del sim.SurveySimulation.TargetList.coords
+        listOfAtts = sim.SurveySimulation.TargetList.catalog_atts + ['ra','dec','distance']
+        listOfAtts.remove('coords')
+        unittedListOfAtts = [att + ' (' + str(getattr(sim.SurveySimulation.TargetList,att).unit) + ')' if 'unit' in dir(getattr(sim.SurveySimulation.TargetList,att)) else att for att in listOfAtts]
+        lines.append(', '.join(['sInd'] + unittedListOfAtts + ['Observed'] + ['initt0 (d)'] + ['comp0']))
         for i in np.arange(len(tmpI)):
-            lines.append(', '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]])] + [str(comp0[tmpI[i]])]))
 
+            lines.append(', '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]].value) if 'value' in dir(getattr(sim.SurveySimulation.TargetList,att)) else str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]].value)] + [str(comp0[tmpI[i]])]))
 
         #### Save Data File
         fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
