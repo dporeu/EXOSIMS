@@ -79,6 +79,14 @@ class plotC0vsT0andCvsT(object):
             PPoutpath (string) - output path to place data in
             folder (string) - full filepath to folder containing runs
         """
+        if not os.path.exists(folder):#Folder must exist
+            raise ValueError('%s not found'%folder)
+        if not os.path.exists(PPoutpath):#PPoutpath must exist
+            raise ValueError('%s not found'%PPoutpath) 
+        outspecfile = os.path.join(folder,'outspec.json')
+        if not os.path.exists(outspecfile):#outspec file not found
+            raise ValueError('%s not found'%outspecfile) 
+
         #Get name of pkl file
         if isinstance(self.args,dict):
             if 'file' in self.args.keys():
@@ -524,10 +532,10 @@ class plotC0vsT0andCvsT(object):
         listOfAtts = sim.SurveySimulation.TargetList.catalog_atts + ['ra','dec','distance']
         listOfAtts.remove('coords')
         unittedListOfAtts = [att + ' (' + str(getattr(sim.SurveySimulation.TargetList,att).unit) + ')' if 'unit' in dir(getattr(sim.SurveySimulation.TargetList,att)) else att for att in listOfAtts]
-        lines.append(', '.join(['sInd'] + unittedListOfAtts + ['Observed'] + ['initt0 (d)'] + ['comp0']))
+        lines.append(', & , '.join(['sInd'] + unittedListOfAtts + ['Observed'] + ['initt0 (d)'] + ['comp0']))
         for i in np.arange(len(tmpI)):
 
-            lines.append(', '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]].value) if 'value' in dir(getattr(sim.SurveySimulation.TargetList,att)) else str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]].value)] + [str(comp0[tmpI[i]])]))
+            lines.append(', & , '.join([str(tmpI[i])] + [str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]].value) if 'value' in dir(getattr(sim.SurveySimulation.TargetList,att)) else str(getattr(sim.SurveySimulation.TargetList,att)[tmpI[i]]) for att in listOfAtts] + ['1' if tmpI[i] in star_inds else '0'] + [str(initt0[tmpI[i]].value)] + [str(comp0[tmpI[i]])]))
 
         #### Save Data File
         fname = 'C0vsT0andCvsTDATA_' + folder.split('/')[-1] + '_' + date
