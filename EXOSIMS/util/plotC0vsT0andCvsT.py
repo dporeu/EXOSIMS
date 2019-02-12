@@ -458,12 +458,12 @@ class plotC0vsT0andCvsT(object):
         n0, bins0, patches0 = plt.subplot(gs[1]).hist(x, bins=xbins, color = 'black', alpha = 0., fill='black', histtype='step')#,normed=True)#, hatch='-/')#1D histogram of universe a
         center0 = (bins0[:-1] + bins0[1:]) / 2.
         width0=np.diff(bins0)
-        ax0.bar(x=center0, height=n0/float(numObs0), align='center', width=width0, color='black', fill='black')
+        ax0.bar(center0, n0/float(numObs0), align='center', width=width0, color='black', fill='black')
 
         n3, bins3, patches3 = plt.subplot(gs[1]).hist(y, bins=ybins, color = 'black', alpha = 0., fill='black', histtype='step')#,normed=True)#, hatch='-/')#1D histogram of universe a
         center3 = (bins3[:-1] + bins3[1:]) / 2.
         width3=np.diff(bins3)
-        ax3.barh(y=center3, width=np.asarray(n3/float(numObs0)), align='center', height=width3, color='black', fill='black')
+        ax3.barh(center3, np.asarray(n3/float(numObs0)), align='center', height=width3, color='black', fill='black')
         plt.show(block=False)
 
         fname = 'CvsTlinesAndHists_' + folder.split('/')[-1] + '_' + date
