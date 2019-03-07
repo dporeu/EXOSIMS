@@ -69,7 +69,7 @@ def run_one(genNewPlanets=True, rewindPlanets=True, outpath='.'):
     # reset simulation at the end of each simulation
     SS.reset_sim(genNewPlanets=genNewPlanets, rewindPlanets=rewindPlanets)  
 
-    pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in range(5)]) + '.pkl'
+    pklname = 'run'+str(int(time.clock()*100))+''.join(["%s" % random.randint(0, 9) for num in np.arange(5)]) + '.pkl'
     pklpath = os.path.join(outpath, pklname)
     with open(pklpath, 'wb') as f:
         pickle.dump({'DRM':DRM,'systems':systems,'seed':seed}, f)

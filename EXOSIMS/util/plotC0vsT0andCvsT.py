@@ -472,7 +472,7 @@ class plotC0vsT0andCvsT(object):
         center3 = (bins3[:-1] + bins3[1:]) / 2.
         width3=np.diff(bins3)
         ax3.barh(center3, np.asarray(n3/float(numObs0)), align='center', height=width3, color='black', fill='black')
-        #plt.show(block=False)
+        plt.show(block=False)
 
         fname = 'CvsTlinesAndHists_' + folder.split('/')[-1] + '_' + date
         plt.savefig(os.path.join(PPoutpath, fname + '.png'))

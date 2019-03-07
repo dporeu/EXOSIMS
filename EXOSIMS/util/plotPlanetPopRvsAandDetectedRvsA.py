@@ -189,22 +189,22 @@ class plotPlanetPopRvsAandDetectedRvsA(object):
         #Plot the universe planet pop histograms
         #*note len(out) should equal len(all_res)
         #Universe SMA Hist
-        n2, bins2, patches2 = plt.subplot(gs[4+5]).hist(x, bins=xbins, color = 'black', alpha=0., histtype='step',density=True)#1D histogram of universe a
+        n2, bins2, patches2 = plt.subplot(gs[4+5]).hist(x, bins=xbins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of universe a
         center2 = (bins2[:-1] + bins2[1:]) / 2
         width2=np.diff(bins2)
         ax2.bar(center2, n2*(len(x)/float(len(out['smas']))), align='center', width=width2, color='black', fill='black')
         #Detected SMA Hist
-        n5, bins5, patches5 = plt.subplot(gs[4+5]).hist(det_smas, bins=xbins, color = 'black', alpha=0., histtype='step',density=True)#1D histogram of detected planet a
+        n5, bins5, patches5 = plt.subplot(gs[4+5]).hist(det_smas, bins=xbins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of detected planet a
         center5 = (bins5[:-1] + bins5[1:]) / 2
         width5=np.diff(bins5)
         ax5.bar(center5, n5*(len(det_smas)/float(len(out['smas']))), align='center', width=width5, color='black', fill='black')
         #Universe Rp Hist
-        n3, bins3, patches3 = plt.subplot(gs[4+5]).hist(y, bins=ybins, color = 'black', alpha=0., histtype='step',density=True)#1D histogram of detected planet a
+        n3, bins3, patches3 = plt.subplot(gs[4+5]).hist(y, bins=ybins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of detected planet a
         center3 = (bins3[:-1] + bins3[1:]) / 2
         width3=np.diff(bins3)
         ax3.barh(center3, n3*(len(y)/float(len(out['Rps']))), width3, align='center', color='black')
         #aDetected Rp Hist
-        n6, bins6, patches6 = plt.subplot(gs[4+5]).hist(det_Rps, bins=ybins, color = 'black', alpha=0., histtype='step',density=True)#1D histogram of detected planet a
+        n6, bins6, patches6 = plt.subplot(gs[4+5]).hist(det_Rps, bins=ybins, color = 'black', alpha=0., histtype='step',normed=True)#,density=True)#1D histogram of detected planet a
         center6 = (bins6[:-1] + bins6[1:]) / 2
         width6=np.diff(bins6)
         ax6.barh(center6, n6*(len(det_Rps)/float(len(out['Rps']))), width6, align='center', color='black')
