@@ -395,7 +395,6 @@ class SurveySimulation(object):
                 self.logger.info(log_obs)
                 self.vprint(log_obs)
                 
-                #DELETE self.vprint('Pre Obs Det: ' + str(self.TimeKeeping.currentTimeNorm))
                 # PERFORM DETECTION and populate revisit list attribute
                 detected, det_fZ, det_systemParams, det_SNR, FA = \
                         self.observation_detection(sInd, det_intTime.copy(), det_mode)
@@ -409,7 +408,6 @@ class SurveySimulation(object):
                 DRM['det_fZ'] = det_fZ.to('1/arcsec2')
                 DRM['det_params'] = det_systemParams
                 
-                #DELETE self.vprint('Pre Obs Char: ' + str(self.TimeKeeping.currentTimeNorm))
                 # PERFORM CHARACTERIZATION and populate spectra list attribute
                 if char_mode['SNR'] not in [0, np.inf]:
                     characterized, char_fZ, char_systemParams, char_SNR, char_intTime = \
@@ -452,11 +450,9 @@ class SurveySimulation(object):
                 # append result values to self.DRM
                 self.DRM.append(DRM)
 
-                #DELETE self.vprint('Pre arbitrary_time_advancement: ' + str(self.TimeKeeping.currentTimeNorm))
                 # handle case of inf OBs and missionPortion < 1
-                if np.isinf(TK.OBduration) and (TK.missionPortion < 1):
+                if np.isinf(TK.OBduration) and (TK.missionPortion < 1.):
                     self.arbitrary_time_advancement(TK.currentTimeNorm.to('day').copy() - DRM['arrival_time'])
-                #DELETE self.vprint('Post arbitrary_time_advancement: ' + str(self.TimeKeeping.currentTimeNorm))
                 
             else:#sInd == None
                 sInd = old_sInd#Retain the last observed star
