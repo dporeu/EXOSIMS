@@ -542,7 +542,7 @@ class SLSQPScheduler(SurveySimulation):
         #Convert Abs Times to norm Time
         tabsTs = list()
         for i in np.arange(len(absTs)):
-            tabsTs.append(absTs[i] - TK.missionStart) # all should be in first year
+            tabsTs.append((absTs[i] - TK.missionStart).value) # all should be in first year
         tSinceStartOfThisYear = TK.currentTimeNorm.copy().value%365.25
         if len(tabsTs) == len(np.where(tSinceStartOfThisYear < np.asarray(tabsTs))[0]): # time strictly less than all absTs
             absT = absTs[np.argmin(tabsTs)]
