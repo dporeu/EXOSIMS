@@ -441,6 +441,13 @@ class SLSQPScheduler(SurveySimulation):
                             tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
                         else: # fZminType0 == 1 and fZminType1 == 0
                             tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
+                    elif fZminType1 == 2 or fZminType0 == 2: # At least one is local minimum
+                        if fZminType0 == 2:
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3]-dt,self.fZQuads[i][fZarrInds[1]][3]]))
+                        else: # fZminType1 == 2
+                            tmpabsTimefZmin.append(self.whichTimeComesNext([self.fZQuads[i][fZarrInds[0]][3],self.fZQuads[i][fZarrInds[1]][3]-dt]))
+                    else:
+                        print(error)
                 elif len(fZarrInds) == 1:
                     fZminType0 = self.fZQuads[i][fZarrInds[0]][0]
                     if fZminType0 == 2: # only 1 local fZmin
@@ -449,6 +456,8 @@ class SLSQPScheduler(SurveySimulation):
                         tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3] - dt)
                     elif fZminType0 == 1: # exiting
                         tmpabsTimefZmin.append(self.fZQuads[i][fZarrInds[0]][3])
+                    else:
+                        print(error)
                 elif len(fZarrInds) == 3:
                     #Not entirely sure why 3 is occuring. Looks like entering, exiting, and local minima exist.... strange
                     tmpdt = list()
@@ -462,6 +471,9 @@ class SLSQPScheduler(SurveySimulation):
                     print('The Number of fZarrInds was 4... what')
                     assert not len(fZarrInds) >= 4, 'The Number of fZarrInds was 4... what???'
                     #might check to see if local minimum and koentering/exiting happened
+                elif len(fZarrInds) == 0:
+                    print('The Number of fZarrInds was 0... what')
+                    assert not len(fZarrInds) == 0, 'The Number of fZarrInds was 0... what???'
 
             #reassign
             tmpabsTimefZmin = Time(np.asarray([tttt.value for tttt in tmpabsTimefZmin]),format='mjd',scale='tai')
